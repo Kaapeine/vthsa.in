@@ -21,11 +21,13 @@ const { title, description } = Astro.props;
     ></script>
   </head>
   <body>
-    <Header />
     <main>
       <div class="hero" id="hero">
         <div class="hero-content">
-          <slot />
+          <Header />
+          <div class="container">
+            <slot />
+          </div>
         </div>
       </div>
     </main>
@@ -130,7 +132,7 @@ const { title, description } = Astro.props;
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 90vh;
+    min-height: 100vh;
     width: 100%;
     padding: 0;
   }
@@ -155,14 +157,22 @@ const { title, description } = Astro.props;
   .hero-content {
     position: absolute;
     z-index: 1;
-    width: 60%;
-    height: 85%;
-    margin: 3rem;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    height: 90%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: star;
     background-color: black;
     overflow-y: auto;
+    opacity: 60%;
+    border-radius: 10px;
+  }
+
+  .container {
+    padding: 1em 10em;
   }
 </style>

@@ -17,14 +17,13 @@ import HeaderLink from './HeaderLink.astro';
   header {
     margin: 0;
     padding: 0 1em;
-    /* background: white; */
-    background: #050505;
     box-shadow: 0 2px 8px rgba(var(--black), 5%);
     height: 10vh;
+    width: 100%;
   }
   h2 {
     margin: 0;
-    font-size: 1.2em;
+    font-size: 1.5em;
   }
 
   h2 a,
@@ -35,21 +34,23 @@ import HeaderLink from './HeaderLink.astro';
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background-color: #050505;
   }
   nav a {
     padding: 1em 0.5em;
     color: #fff;
-    border-bottom: 4px solid transparent;
+    /* border-bottom: 4px solid transparent; */
     text-decoration: none;
     transition: color 0.2s ease;
   }
   nav a:hover {
-    color: var(--accent);
+    /* color: var(--accent); */
+    text-decoration: underline 2px var(--accent);
+    text-underline-offset: 5px;
   }
   nav a.active {
-    text-decoration: none;
-    color: var(--accent);
+    text-decoration: underline 2px var(--accent);
+    text-underline-offset: 5px;
+    /* color: var(--accent); */
   }
   .social-links,
   .social-links a {
