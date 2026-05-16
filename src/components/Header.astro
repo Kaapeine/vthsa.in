@@ -20,10 +20,11 @@ import HeaderLink from './HeaderLink.astro';
     /* background: white; */
     background: #050505;
     box-shadow: 0 2px 8px rgba(var(--black), 5%);
+    height: 10vh;
   }
   h2 {
     margin: 0;
-    font-size: 1em;
+    font-size: 1.2em;
   }
 
   h2 a,
@@ -41,6 +42,10 @@ import HeaderLink from './HeaderLink.astro';
     color: #fff;
     border-bottom: 4px solid transparent;
     text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  nav a:hover {
+    color: var(--accent);
   }
   nav a.active {
     text-decoration: none;

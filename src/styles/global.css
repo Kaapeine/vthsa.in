@@ -18,7 +18,7 @@
 		0 16px 32px rgba(var(--gray), 33%);
 }
 body {
-	font-family: var(--font-atkinson);
+	font-family: 'EB Garamond', Georgia, serif;
 	margin: 0;
 	padding: 0;
 	text-align: left;
@@ -33,10 +33,7 @@ body {
 	line-height: 1.7;
 }
 main {
-	width: 720px;
-	max-width: calc(100% - 2em);
 	margin: auto;
-	padding: 3em 1em;
 }
 h1,
 h2,
