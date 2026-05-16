@@ -4,6 +4,7 @@
   License MIT: https://github.com/HermanMartinus/bearblog/blob/master/LICENSE.md
  */
 
+ @import "tailwindcss";
 :root {
 	--accent: #2337ff;
 	--accent-dark: #000d8a;
@@ -21,11 +22,13 @@ body {
 	margin: 0;
 	padding: 0;
 	text-align: left;
-	background: linear-gradient(var(--gray-gradient)) no-repeat;
+	/* background: linear-gradient(var(--gray-gradient)) no-repeat; */
+		background: #050505;
 	background-size: 100% 600px;
 	word-wrap: break-word;
 	overflow-wrap: break-word;
-	color: rgb(var(--gray-dark));
+	/* color: rgb(var(--gray-dark)); */
+		color: #FFF;
 	font-size: 20px;
 	line-height: 1.7;
 }
@@ -42,7 +45,8 @@ h4,
 h5,
 h6 {
 	margin: 0 0 0.5rem 0;
-	color: rgb(var(--black));
+	/* color: rgb(var(--black)); */
+		color: #FFF;
 	line-height: 1.2;
 }
 h1 {
@@ -65,10 +69,12 @@ b {
 	font-weight: 700;
 }
 a {
-	color: var(--accent);
+	/* color: var(--accent); */
+		color: #FFF;
 }
 a:hover {
-	color: var(--accent);
+	/* color: var(--accent); */
+		color: #FFF;
 }
 p {
 	margin-bottom: 1em;
@@ -93,7 +99,8 @@ img {
 }
 code {
 	padding: 2px 5px;
-	background-color: rgb(var(--gray-light));
+	/* background-color: rgb(var(--gray-light)); */
+		background-color: #707070;
 	border-radius: 2px;
 }
 pre {
