@@ -41,7 +41,7 @@ const { title, description } = Astro.props;
     window.__sketchRunning = true;
 
     new p5(function (p) {
-      const COUNT = 150;
+      const COUNT = 300;
       const NOISE_SCALE = 0.003;
       let particles = [];
 
@@ -56,7 +56,7 @@ const { title, description } = Astro.props;
           this.px = this.x;
           this.py = this.y;
           this.speed = p.random(1, 2.5);
-          this.hue = p.random(190, 270);
+          this.hue = p.random(235, 235);
           this.life = p.random(120, 320);
           this.maxLife = this.life;
         }
@@ -88,8 +88,8 @@ const { title, description } = Astro.props;
         }
 
         draw() {
-          const alpha = (this.life / this.maxLife) * 75;
-          p.stroke(this.hue, 55, 90, alpha);
+          const alpha = (this.life / this.maxLife) * 100;
+          p.stroke(this.hue, 86, 100, alpha);
           p.strokeWeight(1.2);
           p.line(this.px, this.py, this.x, this.y);
         }
@@ -110,7 +110,7 @@ const { title, description } = Astro.props;
       };
 
       p.draw = function () {
-        p.background(0, 0, 6, 10);
+        p.background(0, 0, 6, 2);
         for (const pt of particles) {
           pt.update();
           pt.draw();
