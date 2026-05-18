@@ -18,4 +18,26 @@ const blog = defineCollection({
 		}),
 });
 
-export const collections = { blog };
+const projects = defineCollection({
+	loader: glob({ base: './src/content/projects', pattern: '**/*.md' }),
+	schema: z.object({
+		title: z.string(),
+		description: z.string(),
+		url: z.string(),
+		year: z.number(),
+		tags: z.array(z.string()).optional(),
+	}),
+});
+
+const music = defineCollection({
+	loader: glob({ base: './src/content/music', pattern: '**/*.md' }),
+	schema: z.object({
+		title: z.string(),
+		description: z.string(),
+		url: z.string(),
+		year: z.number(),
+		tags: z.array(z.string()).optional(),
+	}),
+});
+
+export const collections = { blog, projects, music };

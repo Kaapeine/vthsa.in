@@ -1,0 +1,121 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { SITE_DESCRIPTION } from '../../consts';
+
+async function getOgImage(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(5000),
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; bot)' },
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    const tag = html.match(/<meta[^>]+og:image[^>]*>/i)?.[0] ?? '';
+    return tag.match(/content=["']([^"']+)["']/i)?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const raw = (await getCollection('projects')).sort(
+  (a, b) => b.data.year - a.data.year,
+);
+
+const projects = await Promise.all(
+  raw.map(async (p) => ({ ...p, ogImage: await getOgImage(p.data.url) })),
+);
+---
+
+<BaseLayout title="Projects" description={SITE_DESCRIPTION}>
+  <ul>
+    {
+      projects.map((project) => (
+        <li>
+          <a href={project.data.url} class="card" target="_blank" rel="noopener noreferrer">
+            {project.ogImage && (
+              <img src={project.ogImage} alt="" class="card-img" />
+            )}
+            <div class="card-body">
+              <span class="card-title">{project.data.title}</span>
+              <span class="card-desc">{project.data.description}</span>
+              <div class="card-meta">
+                <span class="year">{project.data.year}</span>
+                {project.data.tags?.map((tag) => (
+                  <span class="tag">#{tag}</span>
+                ))}
+              </div>
+            </div>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</BaseLayout>
+
+<style>
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .card {
+    display: flex;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s;
+  }
+  .card:hover {
+    border-color: var(--accent);
+  }
+  .card-img {
+    width: 160px;
+    height: 100px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  .card-body {
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    justify-content: center;
+  }
+  .card-title {
+    font-weight: 700;
+    color: #fff;
+    font-size: 1em;
+  }
+  .card-desc {
+    font-size: 0.78em;
+    color: rgb(var(--gray));
+    line-height: 1.4;
+  }
+  .card-meta {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-top: 0.3rem;
+    font-size: 0.68em;
+    color: rgb(var(--gray));
+  }
+  .tag {
+    color: var(--accent);
+    letter-spacing: 0.03em;
+  }
+  @media (max-width: 720px) {
+    .card {
+      flex-direction: column;
+    }
+    .card-img {
+      width: 100%;
+      height: 160px;
+    }
+  }
+</style>
