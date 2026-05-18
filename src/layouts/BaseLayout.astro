@@ -189,6 +189,13 @@ const { title, description } = Astro.props;
     border-radius: 10px;
   }
 
+  @media (max-width: 720px) {
+    .hero-content {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
   .container {
     padding: 1rem clamp(1rem, 6vw, 5rem);
   }
