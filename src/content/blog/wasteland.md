@@ -15,7 +15,7 @@ to do the bidding of their leather clad\
 masters, and men muscular at their call\
 to hurt or kill for them in brutal ways,\
 every clan vies to outdo each other\
-in cruelty, This is the order that man\
+in cruelty, this is the order that man\
 arrived at once the bomb was dropped and life\
 made scarce, the world now dealt with sex and oil,\
 with trading of women's bodies made flesh\

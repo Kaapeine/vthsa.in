@@ -15,7 +15,7 @@ under sand buried deep untouched till date\
 was the great harbour of El Dorado\
 Rumoured hidden within inside was gold,\
 enough for all with will and grit to stand\
-Posideon's wrath, and so these men followed\
+Poseidon's wrath, and so these men followed\
 their maps to now arrive at their final mark\
 Their sensors indicate the spot to strike\
 with spades, and now being so close, they dig\
