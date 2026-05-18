@@ -38,8 +38,7 @@ const { title, description } = Astro.props;
       <iframe
         src="https://www.youtube.com/embed/rCQqCOu1qWs?autoplay=1&mute=1&enablejsapi=1"
         allow="autoplay; encrypted-media"
-        allowfullscreen
-      ></iframe>
+        allowfullscreen></iframe>
     </div>
   </body>
 </html>
@@ -48,7 +47,10 @@ const { title, description } = Astro.props;
   if (!window.__ytCloseWired) {
     window.__ytCloseWired = true;
     document.getElementById('yt-close').addEventListener('click', () => {
-      document.getElementById('yt-player').style.display = 'none';
+      const player = document.getElementById('yt-player');
+      const iframe = player.querySelector('iframe');
+      if (iframe) iframe.src = '';
+      player.style.display = 'none';
     });
   }
 
@@ -59,7 +61,7 @@ const { title, description } = Astro.props;
       if (iframe) {
         iframe.contentWindow.postMessage(
           JSON.stringify({ event: 'command', func: 'unMute', args: [] }),
-          '*'
+          '*',
         );
       }
       document.removeEventListener('click', unmuteYT);
@@ -160,6 +162,10 @@ const { title, description } = Astro.props;
     height: 100%;
   }
 
+  :global(html) {
+    font-size: clamp(13px, 1.8vw, 16px);
+  }
+
   :global(body) {
     display: flex;
     flex-direction: column;
@@ -206,7 +212,7 @@ const { title, description } = Astro.props;
   }
 
   .container {
-    padding: 1em 5em;
+    padding: 1rem clamp(1rem, 6vw, 5rem);
   }
 
   #yt-player {
