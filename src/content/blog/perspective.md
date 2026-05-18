@@ -1,4 +1,9 @@
-# Impressions, perspective drawing and 3D thinking
+---
+title: 'Impressions, perspective drawing and 3D thinking (WIP)'
+description: 'Lorem ipsum dolor sit amet'
+pubDate: 'May 18 2026'
+tags: ["writing", "personal", "art"]
+---
 
 I've been thinking a lot about drawing lately. I've been sketching since I was a kid but I never progressed beyond just copying things from images or drawing what I see in front of me. But the ultimate thing in art for me is to be able to draw from your head while still making it 'believable'. I'm thinking of artists like Moebius, who were able to create fantastic worlds in their imagination, and bring it to life through their masterful technique. And for the longest time, I used to think that being able to create works like that was a skill far out of reach for mere mortals like me, until I read an art book on Impressionism and learned more about art fundamentals and perspective drawing. Slowly I was able to bring together all these different concepts in my head, to the point where I can now look at a piece of art and kind of figure where they were coming from to make something like that, atleast from a technical point of view.
 
