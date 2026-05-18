@@ -2,25 +2,27 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="About Me" description="Lorem ipsum dolor sit amet">
-  <p>
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-    labore et dolore magna aliqua. Vitae ultricies leo integer malesuada nunc vel risus commodo
-    viverra. Adipiscing enim eu turpis egestas pretium. Euismod elementum nisi quis eleifend quam
-    adipiscing. In hac habitasse platea dictumst vestibulum. Sagittis purus sit amet volutpat. Netus
-    et malesuada fames ac turpis egestas. Eget magna fermentum iaculis eu non diam phasellus
-    vestibulum lorem. Varius sit amet mattis vulputate enim. Habitasse platea dictumst quisque
-    sagittis. Integer quis auctor elit sed vulputate mi. Dictumst quisque sagittis purus sit amet.
-  </p>
+<BaseLayout title="About Me" description="About Me">
+  <div class="container">
+    <p>
+      I’m Shrivathsa, a Software Engineer currently living in Bangalore, India.
+      I love working with computers and I've worked on web development,
+      interactive games and robotics. Outside of work, I make music on Ableton
+      and play guitar. I love reading and consider myself a lifelong learner,
+      and I wish I could be paid to simply read and write about the things I am
+      curious about, which is nearly everything under the 4th dimensional roof
+      of the universe, and maybe even beyond that.
+    </p>
 
-  <p>
-    Morbi tristique senectus et netus. Id semper risus in hendrerit gravida rutrum quisque non
-    tellus. Habitasse platea dictumst quisque sagittis purus sit amet. Tellus molestie nunc non
-    blandit massa. Cursus vitae congue mauris rhoncus. Accumsan tortor posuere ac ut. Fringilla urna
-    porttitor rhoncus dolor. Elit ullamcorper dignissim cras tincidunt lobortis. In cursus turpis
-    massa tincidunt dui ut ornare lectus. Integer feugiat scelerisque varius morbi enim nunc.
-    Bibendum neque egestas congue quisque egestas diam. Cras ornare arcu dui vivamus arcu felis
-    bibendum. Dignissim suspendisse in est ante in nibh mauris. Sed tempus urna et pharetra pharetra
-    massa massa ultricies mi.
-  </p>
+    <img src="me.jpeg" />
+  </div>
 </BaseLayout>
+
+<style>
+  .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1em;
+  }
+</style>
