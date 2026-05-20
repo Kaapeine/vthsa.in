@@ -1,6 +1,6 @@
 ---
 title: 'Impressions, perspective drawing and 3D thinking'
-description: 'Lorem ipsum dolor sit amet'
+description: 'On impressionism, perspective drawing, and learning to see the world differently'
 pubDate: 'May 18 2026'
 tags: ["writing", "personal", "art"]
 ---

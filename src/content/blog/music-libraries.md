@@ -1,6 +1,6 @@
 ---
 title: 'Music libraries, a rant'
-description: 'Lorem ipsum dolor sit amet'
+description: 'A rant about the difference between owning a music library and the convenience of streaming'
 pubDate: 'Jul 30 2022'
 tags: ["writing", "personal", "music"]
 ---

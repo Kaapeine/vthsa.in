@@ -17,7 +17,7 @@ const posts = (await getCollection('blog')).sort(
           <span class="date">
             <FormattedDate date={post.data.pubDate} />
           </span>
-          <a href={`/blog/${post.id}/`} class="title">{post.data.title}</a>
+          <a href={`/writing/${post.id}/`} class="title">{post.data.title}</a>
           {post.data.tags && post.data.tags.length > 0 && (
             <span class="tags">
               {post.data.tags.map((tag) => (
