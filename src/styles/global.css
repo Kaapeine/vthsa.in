@@ -4,7 +4,10 @@
   License MIT: https://github.com/HermanMartinus/bearblog/blob/master/LICENSE.md
  */
 
- @import "tailwindcss";
+*, *::before, *::after {
+	box-sizing: border-box;
+}
+
 :root {
 	--accent: #2337ff;
 	--accent-dark: #000d8a;
@@ -78,8 +81,7 @@ p {
 }
 .prose p {
 	margin-bottom: 2em;
-}
-textarea {
+}textarea {
 	width: 100%;
 	font-size: 16px;
 }

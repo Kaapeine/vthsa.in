@@ -232,36 +232,39 @@ const allTags = [...new Set(links.flatMap((l) => l.tags))].sort();
 </style>
 
 <script>
-  const buttons = document.querySelectorAll<HTMLButtonElement>('.tag-btn');
-  const items = document.querySelectorAll<HTMLLIElement>('#garden-list li');
+  function init() {
+    const buttons = document.querySelectorAll<HTMLButtonElement>('.tag-btn');
+    const items = document.querySelectorAll<HTMLLIElement>('#garden-list li');
+    const list = document.getElementById('garden-list')!;
+    let selected: string | null = null;
 
-  const list = document.getElementById('garden-list')!;
-  let selected: string | null = null;
+    function update() {
+      list.classList.toggle('music-grid', selected === 'music');
+      items.forEach((item) => {
+        if (!selected) {
+          item.classList.remove('hidden');
+          return;
+        }
+        const tags = item.dataset.tags?.split(',') ?? [];
+        item.classList.toggle('hidden', !tags.includes(selected));
+      });
+    }
 
-  function update() {
-    list.classList.toggle('music-grid', selected === 'music');
-    items.forEach((item) => {
-      if (!selected) {
-        item.classList.remove('hidden');
-        return;
-      }
-      const tags = item.dataset.tags?.split(',') ?? [];
-      item.classList.toggle('hidden', !tags.includes(selected));
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tag = btn.dataset.tag!;
+        if (selected === tag) {
+          selected = null;
+          btn.classList.remove('active');
+        } else {
+          buttons.forEach((b) => b.classList.remove('active'));
+          selected = tag;
+          btn.classList.add('active');
+        }
+        update();
+      });
     });
   }
 
-  buttons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const tag = btn.dataset.tag!;
-      if (selected === tag) {
-        selected = null;
-        btn.classList.remove('active');
-      } else {
-        buttons.forEach((b) => b.classList.remove('active'));
-        selected = tag;
-        btn.classList.add('active');
-      }
-      update();
-    });
-  });
+  document.addEventListener('astro:page-load', init);
 </script>

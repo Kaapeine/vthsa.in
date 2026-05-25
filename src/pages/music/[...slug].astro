@@ -26,10 +26,14 @@ const { title, description, externalUrl, year, tags } = track.data;
           {tags?.map((tag) => <span class="tag">#{tag}</span>)}
         </div>
         <p class="description">{description}</p>
-        <a href={externalUrl} class="external-link" target="_blank" rel="noopener noreferrer">
+        <a
+          href={externalUrl}
+          class="external-link"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           Listen →
         </a>
-        <hr />
       </div>
       <Content />
     </div>

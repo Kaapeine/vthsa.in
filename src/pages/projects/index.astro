@@ -79,13 +79,15 @@ const projects = await Promise.all(
     height: 100px;
     object-fit: cover;
     flex-shrink: 0;
+    align-self: center;
   }
   .card-body {
-    padding: 0.75rem 1rem;
+    padding: 0.75rem;
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
     justify-content: center;
+    min-width: 0;
   }
   .card-title {
     font-weight: 700;
