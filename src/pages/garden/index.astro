@@ -44,6 +44,7 @@ const allTags = [...new Set(links.flatMap((l) => l.tags))].sort();
       <li data-tags={link.tags.join(',')}>
         {link.albumArt ? (
           <a href={link.url} class="card" target="_blank" rel="noopener noreferrer">
+            <img src={link.albumArt} alt="" class="card-img" />
             <div class="card-body">
               <span class="card-title">{link.title}</span>
               <span class="card-desc">{link.description}</span>
@@ -51,7 +52,6 @@ const allTags = [...new Set(links.flatMap((l) => l.tags))].sort();
                 {link.tags.map((tag) => <span class="tag">#{tag}</span>)}
               </div>
             </div>
-            <img src={link.albumArt} alt="" class="card-img" />
           </a>
         ) : (
           <div class="plain-link">
@@ -125,6 +125,7 @@ const allTags = [...new Set(links.flatMap((l) => l.tags))].sort();
     object-fit: cover;
     flex-shrink: 0;
     border-radius: 4px;
+    order: 1;
     margin-left: auto;
   }
   .card-body {
@@ -188,34 +189,76 @@ const allTags = [...new Set(links.flatMap((l) => l.tags))].sort();
     color: var(--accent);
     letter-spacing: 0.03em;
   }
+
+  /* Music grid mode */
+  ul.music-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+  ul.music-grid li {
+    display: flex;
+  }
+  ul.music-grid li.hidden {
+    display: none;
+  }
+  ul.music-grid .card {
+    flex: 1;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+  ul.music-grid .card-img {
+    order: 0;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    margin-left: 0;
+    border-radius: 4px 4px 0 0;
+  }
+  ul.music-grid .card-body {
+    padding: 0.6rem 0.75rem;
+  }
+  @media (max-width: 720px) {
+    ul.music-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 480px) {
+    ul.music-grid {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>
 
 <script>
   const buttons = document.querySelectorAll<HTMLButtonElement>('.tag-btn');
   const items = document.querySelectorAll<HTMLLIElement>('#garden-list li');
 
-  const selected = new Set<string>();
+  const list = document.getElementById('garden-list')!;
+  let selected: string | null = null;
 
   function update() {
+    list.classList.toggle('music-grid', selected === 'music');
     items.forEach((item) => {
-      if (selected.size === 0) {
+      if (!selected) {
         item.classList.remove('hidden');
         return;
       }
-      const tags = new Set(item.dataset.tags?.split(',') ?? []);
-      const matches = [...selected].every((t) => tags.has(t));
-      item.classList.toggle('hidden', !matches);
+      const tags = item.dataset.tags?.split(',') ?? [];
+      item.classList.toggle('hidden', !tags.includes(selected));
     });
   }
 
   buttons.forEach((btn) => {
     btn.addEventListener('click', () => {
       const tag = btn.dataset.tag!;
-      if (selected.has(tag)) {
-        selected.delete(tag);
+      if (selected === tag) {
+        selected = null;
         btn.classList.remove('active');
       } else {
-        selected.add(tag);
+        buttons.forEach((b) => b.classList.remove('active'));
+        selected = tag;
         btn.classList.add('active');
       }
       update();
