@@ -23,7 +23,7 @@ const projects = defineCollection({
 	schema: z.object({
 		title: z.string(),
 		description: z.string(),
-		url: z.string(),
+		externalUrl: z.string(),
 		year: z.number(),
 		tags: z.array(z.string()).optional(),
 	}),
@@ -34,10 +34,22 @@ const music = defineCollection({
 	schema: z.object({
 		title: z.string(),
 		description: z.string(),
-		url: z.string(),
+		externalUrl: z.string(),
 		year: z.number(),
 		tags: z.array(z.string()).optional(),
 	}),
 });
 
-export const collections = { blog, projects, music };
+const garden = defineCollection({
+	loader: glob({ base: './src/content/garden', pattern: '**/*.md' }),
+	schema: z.object({
+		links: z.array(z.object({
+			title: z.string(),
+			url: z.string(),
+			description: z.string(),
+			tags: z.array(z.string()),
+		})),
+	}),
+});
+
+export const collections = { blog, projects, music, garden };

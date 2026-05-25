@@ -7,7 +7,7 @@ async function getOgImage(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, {
       signal: AbortSignal.timeout(5000),
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; bot)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
     });
     if (!res.ok) return null;
     const html = await res.text();
@@ -23,7 +23,7 @@ const raw = (await getCollection('music')).sort(
 );
 
 const tracks = await Promise.all(
-  raw.map(async (t) => ({ ...t, ogImage: await getOgImage(t.data.url) })),
+  raw.map(async (t) => ({ ...t, ogImage: await getOgImage(t.data.externalUrl) })),
 );
 ---
 
@@ -32,7 +32,7 @@ const tracks = await Promise.all(
     {
       tracks.map((track) => (
         <li>
-          <a href={track.data.url} class="card" target="_blank" rel="noopener noreferrer">
+          <a href={`/music/${track.id}/`} class="card">
             {track.ogImage && (
               <img src={track.ogImage} alt="" class="card-img" />
             )}

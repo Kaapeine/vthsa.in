@@ -32,26 +32,26 @@ const { title, description } = Astro.props;
       </div>
     </main>
     <!-- <Footer /> -->
-    <div id="yt-player" transition:persist>
+    <!-- <div id="yt-player" transition:persist>
       <button id="yt-close" aria-label="Close">✕</button>
       <iframe
         src="https://www.youtube.com/embed/rCQqCOu1qWs?autoplay=1&mute=1&enablejsapi=1"
         allow="autoplay; encrypted-media"
         allowfullscreen></iframe>
-    </div>
+    </div> -->
   </body>
 </html>
 
 <script is:inline>
-  if (!window.__ytCloseWired) {
-    window.__ytCloseWired = true;
-    document.getElementById('yt-close').addEventListener('click', () => {
-      const player = document.getElementById('yt-player');
-      const iframe = player.querySelector('iframe');
-      if (iframe) iframe.src = '';
-      player.style.display = 'none';
-    });
-  }
+  // if (!window.__ytCloseWired) {
+  //   window.__ytCloseWired = true;
+  //   document.getElementById('yt-close').addEventListener('click', () => {
+  //     const player = document.getElementById('yt-player');
+  //     const iframe = player.querySelector('iframe');
+  //     if (iframe) iframe.src = '';
+  //     player.style.display = 'none';
+  //   });
+  // }
 
   if (!window.__sketchRunning) {
     window.__sketchRunning = true;
@@ -185,7 +185,7 @@ const { title, description } = Astro.props;
     justify-content: start;
     background-color: black;
     overflow-y: auto;
-    opacity: 70%;
+    opacity: 85%;
     border-radius: 10px;
   }
 

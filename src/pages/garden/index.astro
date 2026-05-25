@@ -1,0 +1,224 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { SITE_DESCRIPTION } from '../../consts';
+
+async function getOgImage(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(5000),
+      headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    const tag = html.match(/<meta[^>]+og:image[^>]*>/i)?.[0] ?? '';
+    return tag.match(/content=["']([^"']+)["']/i)?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const entries = await getCollection('garden');
+const rawLinks = entries.flatMap((e) => e.data.links);
+
+const links = await Promise.all(
+  rawLinks.map(async (link) => {
+    const isMusic = link.tags.includes('music');
+    const albumArt = isMusic ? await getOgImage(link.url) : null;
+    return { ...link, albumArt };
+  }),
+);
+
+const allTags = [...new Set(links.flatMap((l) => l.tags))].sort();
+---
+
+<BaseLayout title="Garden" description={SITE_DESCRIPTION}>
+  <div class="filter-bar">
+    {allTags.map((tag) => (
+      <button class="tag-btn" data-tag={tag}>#{tag}</button>
+    ))}
+  </div>
+
+  <ul id="garden-list">
+    {links.map((link) => (
+      <li data-tags={link.tags.join(',')}>
+        {link.albumArt ? (
+          <a href={link.url} class="card" target="_blank" rel="noopener noreferrer">
+            <div class="card-body">
+              <span class="card-title">{link.title}</span>
+              <span class="card-desc">{link.description}</span>
+              <div class="card-meta">
+                {link.tags.map((tag) => <span class="tag">#{tag}</span>)}
+              </div>
+            </div>
+            <img src={link.albumArt} alt="" class="card-img" />
+          </a>
+        ) : (
+          <div class="plain-link">
+            <a href={link.url} target="_blank" rel="noopener noreferrer" class="plain-title">
+              {link.title}
+            </a>
+            <p class="plain-desc">{link.description}</p>
+            <div class="plain-meta">
+              <span class="plain-url">{new URL(link.url).hostname}</span>
+              {link.tags.map((tag) => <span class="tag">#{tag}</span>)}
+            </div>
+          </div>
+        )}
+      </li>
+    ))}
+  </ul>
+</BaseLayout>
+
+<style>
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .tag-btn {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    color: rgb(var(--gray));
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.72em;
+    letter-spacing: 0.03em;
+    padding: 0.3em 0.8em;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .tag-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .tag-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  li.hidden {
+    display: none;
+  }
+
+  /* Music card */
+  .card {
+    display: flex;
+    align-items: flex-start;
+    text-decoration: none;
+    color: inherit;
+    gap: 0.9rem;
+  }
+  .card-img {
+    width: clamp(80px, 20vw, 220px);
+    height: clamp(80px, 20vw, 220px);
+    object-fit: cover;
+    flex-shrink: 0;
+    border-radius: 4px;
+    margin-left: auto;
+  }
+  .card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    height: 100%;
+    gap: 0.25rem;
+  }
+  .card-title {
+    font-weight: 700;
+    color: #fff;
+    font-size: 1em;
+  }
+  .card-desc {
+    font-size: 0.78em;
+    color: rgb(var(--gray));
+    line-height: 1.4;
+  }
+  .card-meta {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  /* Plain link */
+  .plain-link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.1rem 0;
+  }
+  .plain-title {
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.95em;
+  }
+  .plain-title:hover {
+    text-decoration: underline 2px var(--accent);
+    text-underline-offset: 4px;
+  }
+  .plain-desc {
+    margin: 0;
+    font-size: 0.78em;
+    color: rgb(var(--gray));
+    line-height: 1.4;
+  }
+  .plain-meta {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .plain-url {
+    font-size: 0.68em;
+    color: rgb(var(--gray));
+  }
+
+  .tag {
+    font-size: 0.68em;
+    color: var(--accent);
+    letter-spacing: 0.03em;
+  }
+</style>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.tag-btn');
+  const items = document.querySelectorAll<HTMLLIElement>('#garden-list li');
+
+  const selected = new Set<string>();
+
+  function update() {
+    items.forEach((item) => {
+      if (selected.size === 0) {
+        item.classList.remove('hidden');
+        return;
+      }
+      const tags = new Set(item.dataset.tags?.split(',') ?? []);
+      const matches = [...selected].every((t) => tags.has(t));
+      item.classList.toggle('hidden', !matches);
+    });
+  }
+
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const tag = btn.dataset.tag!;
+      if (selected.has(tag)) {
+        selected.delete(tag);
+        btn.classList.remove('active');
+      } else {
+        selected.add(tag);
+        btn.classList.add('active');
+      }
+      update();
+    });
+  });
+</script>

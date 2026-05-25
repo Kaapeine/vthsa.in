@@ -1,0 +1,77 @@
+---
+import { type CollectionEntry, getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const tracks = await getCollection('music');
+  return tracks.map((track) => ({
+    params: { slug: track.id },
+    props: track,
+  }));
+}
+type Props = CollectionEntry<'music'>;
+
+const track = Astro.props;
+const { Content } = await render(track);
+const { title, description, externalUrl, year, tags } = track.data;
+---
+
+<BaseLayout title={title} description={description}>
+  <article>
+    <div class="prose">
+      <div class="header">
+        <h1>{title}</h1>
+        <div class="meta">
+          <span class="year">{year}</span>
+          {tags?.map((tag) => <span class="tag">#{tag}</span>)}
+        </div>
+        <p class="description">{description}</p>
+        <a href={externalUrl} class="external-link" target="_blank" rel="noopener noreferrer">
+          Listen →
+        </a>
+        <hr />
+      </div>
+      <Content />
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .prose {
+    width: 100%;
+    margin: auto;
+    padding: 1em;
+  }
+  .header {
+    margin-bottom: 1.5em;
+    padding-bottom: 1em;
+  }
+  h1 {
+    margin: 0 0 0.4em 0;
+  }
+  .meta {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    font-size: 0.78em;
+    color: rgb(var(--gray));
+    margin-bottom: 0.75em;
+  }
+  .tag {
+    color: var(--accent);
+    letter-spacing: 0.03em;
+  }
+  .description {
+    color: rgb(var(--gray));
+    font-size: 0.9em;
+    margin: 0 0 0.75em 0;
+  }
+  .external-link {
+    font-size: 0.85em;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .external-link:hover {
+    text-decoration: underline;
+  }
+</style>
