@@ -1,0 +1,241 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Resume" description="Resume — Shrivathsa M S">
+  <div class="resume-container">
+
+    <a href="/resume.pdf" download class="download-link">Download PDF</a>
+
+    <section>
+      <h2>Skills</h2>
+      <table>
+        <tbody>
+          <tr>
+            <td class="label">Programming Languages</td>
+            <td>HTML, CSS, JavaScript, TypeScript, Go</td>
+          </tr>
+          <tr>
+            <td class="label">Frontend</td>
+            <td>Next.js, React.js, Redux</td>
+          </tr>
+          <tr>
+            <td class="label">CSS & UI Libraries</td>
+            <td>Material Design, Tailwind CSS, Chakra UI, SASS</td>
+          </tr>
+          <tr>
+            <td class="label">Backend</td>
+            <td>Node.js, Express.js, REST APIs, Microservices, net/http, Docker</td>
+          </tr>
+          <tr>
+            <td class="label">Testing</td>
+            <td>Jest, Cypress</td>
+          </tr>
+          <tr>
+            <td class="label">Databases</td>
+            <td>MongoDB</td>
+          </tr>
+          <tr>
+            <td class="label">SDLC</td>
+            <td>Agile, Git, Jira, Gerrit</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Experience</h2>
+
+      <div class="entry">
+        <div class="entry-header">
+          <div>
+            <h3>Solvendo</h3>
+            <span class="role">Full Stack Software Engineer</span>
+          </div>
+          <div class="meta">
+            <span>Bengaluru, KA</span>
+            <span>July 2023 – February 2025</span>
+          </div>
+        </div>
+        <ul>
+          <li>Worked on an application that streamlined the Indian bankruptcy process for banks, companies, and lawyers, used by institutions such as Canara Bank.</li>
+          <li>Worked on micro-frontend architecture, user authentication, and configuration management. <span class="tech">React, Webpack, JavaScript, JWT</span></li>
+          <li>Bootstrapped a new Next.js frontend project for a bankruptcy process with standard coding practices and created standardized, reusable components, reducing dev time by 30%. <span class="tech">Next.js, Chakra UI, NextAuth.js</span></li>
+          <li>Built a high-performance dashboard for a blockchain analytics platform with interactive charts for time series data and a drag-and-drop interface. 10k MAU at peak, loaded in under 2 seconds, Lighthouse score of 93. <span class="tech">Next.js, React-DND, ApexCharts</span></li>
+          <li>Used React DevTools and Lighthouse to diagnose and optimize performance, reducing FCP by 50%.</li>
+          <li>Built a blockchain data processing microservice in Golang aggregating data from WebSockets with REST API endpoints, achieving 8x higher throughput than the previous solution. <span class="tech">net/http, REST APIs, WebSockets</span></li>
+        </ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-header">
+          <div>
+            <h3>Indian Institute of Science</h3>
+            <span class="role">Research Intern</span>
+          </div>
+          <div class="meta">
+            <span>Bengaluru, KA</span>
+            <span>January 2023 – July 2023</span>
+          </div>
+        </div>
+        <ul>
+          <li>Engineered multi-agent robot systems for agricultural applications, achieving 2x improvement in obstacle avoidance performance through novel algorithms. <span class="tech">Python, ROS, EGO Planner</span></li>
+          <li>Developed motion planning algorithms and perception software for UAVs. <span class="tech">ROS, Intel Realsense cameras, 2D Lidars</span></li>
+          <li>Integrated UAVs with DJI control software using SDKs to enhance automation capabilities. <span class="tech">Python, DJI SDK</span></li>
+        </ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-header">
+          <div>
+            <h3>NewSpace Research & Technologies</h3>
+            <span class="role">Robotics Engineer</span>
+          </div>
+          <div class="meta">
+            <span>Bengaluru, KA</span>
+            <span>October 2021 – January 2023</span>
+          </div>
+        </div>
+        <ul>
+          <li>Worked on ROS-based autonomy software for UAVs operating in GPS-denied environments. <span class="tech">ROS, Python, Linux, C++</span></li>
+          <li>Optimized robot localization using visual SLAM and LiDAR SLAM algorithms. <span class="tech">OpenCV, OpenSLAM, VINS-Stereo/Mono, Ouster Lidars</span></li>
+          <li>Developed UAV simulation tools using Python and physics simulation software. <span class="tech">Python, Gazebo, Docker, C++</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>Education</h2>
+      <div class="entry">
+        <div class="entry-header">
+          <div>
+            <h3>BMS College of Engineering</h3>
+            <span class="role">B.E. in Mechanical Engineering</span>
+          </div>
+          <div class="meta">
+            <span>Bengaluru, KA</span>
+            <span>July 2017 – July 2021</span>
+          </div>
+        </div>
+        <p class="edu-detail">Electives: AI, Java, Robotics &nbsp;·&nbsp; GPA: 8.75</p>
+      </div>
+    </section>
+
+  </div>
+</BaseLayout>
+
+<style>
+  .resume-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+    max-width: 780px;
+    width: 100%;
+    padding-bottom: 3.5rem;
+  }
+
+  h2 {
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  h3 {
+    font-size: 1rem;
+    margin: 0;
+  }
+
+  .entry {
+    margin-bottom: 1.75rem;
+  }
+
+  .entry:last-child {
+    margin-bottom: 0;
+  }
+
+  .entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .role {
+    font-style: italic;
+    font-size: 0.9rem;
+    opacity: 0.75;
+  }
+
+  .meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-size: 0.85rem;
+    opacity: 0.65;
+    white-space: nowrap;
+  }
+
+  ul {
+    margin: 0.5rem 0 0 1.25rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  li {
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  .tech {
+    font-size: 0.8rem;
+    opacity: 0.55;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  td {
+    padding: 0.35rem 0.75rem 0.35rem 0;
+    font-size: 0.9rem;
+    vertical-align: top;
+  }
+
+  td.label {
+    white-space: nowrap;
+    opacity: 0.6;
+    padding-right: 1.5rem;
+    font-size: 0.85rem;
+  }
+
+  .edu-detail {
+    font-size: 0.85rem;
+    opacity: 0.65;
+    margin: 0.25rem 0 0 0;
+  }
+
+  @media (max-width: 560px) {
+    .entry-header {
+      flex-direction: column;
+    }
+    .meta {
+      align-items: flex-start;
+    }
+    td.label {
+      display: block;
+      padding-bottom: 0;
+    }
+    td {
+      display: block;
+    }
+  }
+</style>

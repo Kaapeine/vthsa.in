@@ -3,7 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="About Me" description="About Me">
-  <div class="container">
+  <div class="about-container">
     <p>
       I’m Shrivathsa M S, a Software Engineer currently living in Bangalore,
       India. I love working with computers and I've worked on web development,
@@ -14,15 +14,51 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       of the universe, and maybe even beyond that.
     </p>
 
-    <img src="/me.jpeg" />
-  </div>
-</BaseLayout>
+    <h3 class="subtitle">Work</h3>
+    <p>
+      <span>Find my resume <a href="/resume"><b>here.</b></a></span>
+      <br />
+      <br />
+      I'm a Full Stack Developer with 3.5 years of experience building SaaS platforms
+      using modern web technologies. I'm currently working as a freelancer/independent
+      developer. My previous role was as at Solvendo where I helped build their flagship
+      bankruptcy resolution platform. I'm opening to opportunities at exciting small
+      startups where I can contribute directly to the product vision while being able
+      to execute and iterate quickly.
+    </p>
 
-<style>
-  .container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1em;
-  }
-</style>
+    <h3 class="subtitle">Contact</h3>
+    <p>
+      You can reach me at <a href="tel:+918123587152">+91-8123587152</a> or by email
+      at <a href="mailto:msshrivathsa@gmail.com">msshrivathsa@gmail.com</a>.
+    </p>
+
+    <img src="/me.jpeg" />
+    <p>Me!</p>
+  </div>
+
+  <style>
+    .about-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1em;
+    }
+    .subtitle {
+      text-align: left;
+      width: 100%;
+    }
+    p {
+      width: 100%;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      transition: text-decoration-color 0.2s ease;
+    }
+    a:hover {
+      text-decoration: underline 2px var(--accent);
+      text-underline-offset: 5px;
+    }
+  </style>
+</BaseLayout>
