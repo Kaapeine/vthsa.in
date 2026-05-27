@@ -18,7 +18,7 @@ async function getOgImage(url: string): Promise<string | null> {
   }
 }
 
-const entries = await getCollection('garden');
+const entries = await getCollection('library');
 const rawLinks = entries.flatMap((e) => e.data.links);
 
 const links = await Promise.all(
@@ -32,14 +32,14 @@ const links = await Promise.all(
 const allTags = [...new Set(links.flatMap((l) => l.tags))].sort();
 ---
 
-<BaseLayout title="Garden" description={SITE_DESCRIPTION}>
+<BaseLayout title="Library" description={SITE_DESCRIPTION}>
   <div class="filter-bar">
     {allTags.map((tag) => (
       <button class="tag-btn" data-tag={tag}>#{tag}</button>
     ))}
   </div>
 
-  <ul id="garden-list">
+  <ul id="library-list">
     {links.map((link) => (
       <li data-tags={link.tags.join(',')}>
         {link.albumArt ? (
@@ -234,8 +234,8 @@ const allTags = [...new Set(links.flatMap((l) => l.tags))].sort();
 <script>
   function init() {
     const buttons = document.querySelectorAll<HTMLButtonElement>('.tag-btn');
-    const items = document.querySelectorAll<HTMLLIElement>('#garden-list li');
-    const list = document.getElementById('garden-list')!;
+    const items = document.querySelectorAll<HTMLLIElement>('#library-list li');
+    const list = document.getElementById('library-list')!;
     let selected: string | null = null;
 
     function update() {

@@ -40,8 +40,8 @@ const music = defineCollection({
 	}),
 });
 
-const garden = defineCollection({
-	loader: glob({ base: './src/content/garden', pattern: '**/*.md' }),
+const library = defineCollection({
+	loader: glob({ base: './src/content/library', pattern: '**/*.md' }),
 	schema: z.object({
 		links: z.array(z.object({
 			title: z.string(),
@@ -52,4 +52,4 @@ const garden = defineCollection({
 	}),
 });
 
-export const collections = { blog, projects, music, garden };
+export const collections = { blog, projects, music, library };
