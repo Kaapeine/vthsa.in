@@ -21,21 +21,136 @@ const post = parsePostFile(file.text);
 ---
 
 <AdminLayout title="edit post">
-  <a href="/admin">&larr; back</a>
-  <h1>Edit: {post.title}</h1>
-  {error && <div class="msg error">{error}</div>}
-  <form method="POST" action="/admin/api/posts">
-    <input type="hidden" name="mode" value="update" />
-    <input type="hidden" name="slug" value={slug} />
-    <input type="hidden" name="pubDate" value={post.pubDate} />
-    <label for="title">Title</label>
-    <input id="title" name="title" value={post.title} required />
-    <label for="description">Description</label>
-    <input id="description" name="description" value={post.description} required />
-    <label for="tags">Tags (comma-separated)</label>
-    <input id="tags" name="tags" value={post.tags.join(', ')} />
-    <label for="body">Body (markdown)</label>
-    <textarea id="body" name="body" required>{post.body}</textarea>
-    <button type="submit">Save changes</button>
-  </form>
+  <div class="edit-page">
+    <a href="/admin" class="back">&larr; back</a>
+    <h1>Edit: {post.title}</h1>
+    {error && <div class="msg error">{error}</div>}
+    <form method="POST" action="/admin/api/posts">
+      <input type="hidden" name="mode" value="update" />
+      <input type="hidden" name="slug" value={slug} />
+      <input type="hidden" name="pubDate" value={post.pubDate} />
+      <div class="field">
+        <label for="title">Title</label>
+        <input id="title" name="title" value={post.title} required />
+      </div>
+      <div class="field">
+        <label for="description">Description</label>
+        <input id="description" name="description" value={post.description} required />
+      </div>
+      <div class="field">
+        <label for="tags">Tags (comma-separated)</label>
+        <input id="tags" name="tags" value={post.tags.join(', ')} />
+      </div>
+      <div class="field field-body">
+        <label for="body">Body</label>
+        <textarea id="body" name="body" required>{post.body}</textarea>
+      </div>
+      <button type="submit" class="save-btn">Save changes</button>
+    </form>
+  </div>
 </AdminLayout>
+
+<style>
+  .edit-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem 0 3rem;
+  }
+
+  .back {
+    font-size: 0.85rem;
+    color: #6cf;
+    text-decoration: none;
+  }
+
+  .back:hover {
+    text-decoration: underline;
+  }
+
+  h1 {
+    font-size: 1.2rem;
+    margin: 0;
+    word-break: break-word;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    width: 100%;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  label {
+    font-size: 0.78rem;
+    color: #888;
+    letter-spacing: 0.04em;
+  }
+
+  input {
+    width: 100%;
+    box-sizing: border-box;
+    background: #1b1b1b;
+    color: #eee;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 0.5rem;
+    font: inherit;
+    font-size: 0.9rem;
+  }
+
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: #2337ff;
+  }
+
+  .field-body {
+    flex: 1;
+  }
+
+  textarea {
+    width: 100%;
+    box-sizing: border-box;
+    background: #1b1b1b;
+    color: #eee;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 0.5rem;
+    font: inherit;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    resize: vertical;
+    min-height: 60vh;
+    field-sizing: content;
+  }
+
+  .save-btn {
+    font: inherit;
+    font-size: 0.85rem;
+    color: #2337ff;
+    background: transparent;
+    border: 1px solid #2337ff;
+    padding: 0.35rem 0.85rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    align-self: flex-start;
+  }
+
+  .save-btn:hover {
+    background-color: #2337ff;
+    color: #000;
+  }
+
+  @media (max-width: 480px) {
+    .save-btn {
+      align-self: stretch;
+    }
+  }
+</style>

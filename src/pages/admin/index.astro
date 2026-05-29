@@ -43,22 +43,31 @@ if (loggedIn) {
       <>
         {notice && <div class="msg ok">{notice}</div>}
         <div class="row" style="justify-content: space-between;">
-          <h1>admin</h1>
-          <form method="POST" action="/admin/api/logout">
-            <button type="submit">Log out</button>
-          </form>
+          <h1>Admin</h1>
         </div>
 
         <div class="row">
-          <a href="/admin/new">+ New post</a>
-          <a href="/admin/library/new">+ Add library link</a>
+          <button class="enter-btn" onclick="window.location.href='/admin/new'">
+            + New post
+          </button>
+          <button
+            class="enter-btn"
+            onclick="window.location.href='/admin/library/new'"
+          >
+            + Add library link
+          </button>
+          <form method="POST" action="/admin/api/logout">
+            <button type="submit" class="enter-btn">
+              Log out
+            </button>
+          </form>
         </div>
 
         <h2>Posts</h2>
         <ul class="posts">
           {posts.map((p) => (
             <li>
-              <span style="color:#888; min-width:6rem;">
+              <span style="color:#888; min-width:6rem; margin-right: 1em;">
                 {p.pubDate.toISOString().slice(0, 10)}
               </span>
               <a href={`/admin/edit/${p.slug}`} style="flex:1;">
@@ -69,7 +78,7 @@ if (loggedIn) {
                 action={`/admin/api/posts/${p.slug}/delete`}
                 onsubmit="return confirm('Delete this post?');"
               >
-                <button type="submit" style="border-color:#743;">
+                <button type="submit" class="enter-btn">
                   Delete
                 </button>
               </form>
@@ -122,13 +131,16 @@ if (loggedIn) {
     color: red;
   }
 
+  .login-center .enter-btn {
+    width: 100%;
+  }
+
   .enter-btn {
     font: inherit;
     font-size: 0.85rem;
     color: #2337ff;
     background: transparent;
     border: 1px solid #2337ff;
-    width: 100%;
     padding: 0.35rem 0.85rem;
     border-radius: 4px;
     cursor: pointer;
@@ -146,5 +158,25 @@ if (loggedIn) {
     .login-center form {
       max-width: 100%;
     }
+  }
+
+  .row {
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    gap: 2em;
+  }
+
+  .posts {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75em;
+    padding: 0;
+  }
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 </style>

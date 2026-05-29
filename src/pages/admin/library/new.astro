@@ -11,18 +11,112 @@ const error = Astro.url.searchParams.get('error');
 ---
 
 <AdminLayout title="add link">
-  <a href="/admin">&larr; back</a>
-  <h1>Add library link</h1>
-  {error && <div class="msg error">{error}</div>}
-  <form method="POST" action="/admin/api/library">
-    <label for="title">Title</label>
-    <input id="title" name="title" required />
-    <label for="url">URL</label>
-    <input id="url" name="url" type="url" required />
-    <label for="description">Description</label>
-    <input id="description" name="description" required />
-    <label for="tags">Tags (comma-separated)</label>
-    <input id="tags" name="tags" />
-    <button type="submit">Add link</button>
-  </form>
+  <div class="add-link-page">
+    <a href="/admin" class="back">&larr; back</a>
+    <h1>Add library link</h1>
+    {error && <div class="msg error">{error}</div>}
+    <form method="POST" action="/admin/api/library">
+      <div class="field">
+        <label for="title">Title</label>
+        <input id="title" name="title" required />
+      </div>
+      <div class="field">
+        <label for="url">URL</label>
+        <input id="url" name="url" type="url" required />
+      </div>
+      <div class="field">
+        <label for="description">Description</label>
+        <input id="description" name="description" required />
+      </div>
+      <div class="field">
+        <label for="tags">Tags (comma-separated)</label>
+        <input id="tags" name="tags" />
+      </div>
+      <button type="submit" class="save-btn">Add link</button>
+    </form>
+  </div>
 </AdminLayout>
+
+<style>
+  .add-link-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem 0 3rem;
+  }
+
+  .back {
+    font-size: 0.85rem;
+    color: #6cf;
+    text-decoration: none;
+  }
+
+  .back:hover {
+    text-decoration: underline;
+  }
+
+  h1 {
+    font-size: 1.2rem;
+    margin: 0;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    width: 100%;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  label {
+    font-size: 0.78rem;
+    color: #888;
+    letter-spacing: 0.04em;
+  }
+
+  input {
+    width: 100%;
+    box-sizing: border-box;
+    background: #1b1b1b;
+    color: #eee;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 0.5rem;
+    font: inherit;
+    font-size: 0.9rem;
+  }
+
+  input:focus {
+    outline: none;
+    border-color: #2337ff;
+  }
+
+  .save-btn {
+    font: inherit;
+    font-size: 0.85rem;
+    color: #2337ff;
+    background: transparent;
+    border: 1px solid #2337ff;
+    padding: 0.35rem 0.85rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    align-self: flex-start;
+  }
+
+  .save-btn:hover {
+    background-color: #2337ff;
+    color: #000;
+  }
+
+  @media (max-width: 480px) {
+    .save-btn {
+      align-self: stretch;
+    }
+  }
+</style>
