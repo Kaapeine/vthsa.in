@@ -1,0 +1,28 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { isAuthenticated } from '../../../lib/auth';
+
+export const prerender = false;
+
+if (!isAuthenticated(Astro.request.headers.get('cookie'))) {
+  return Astro.redirect('/admin');
+}
+const error = Astro.url.searchParams.get('error');
+---
+
+<AdminLayout title="add link">
+  <a href="/admin">&larr; back</a>
+  <h1>Add library link</h1>
+  {error && <div class="msg error">{error}</div>}
+  <form method="POST" action="/admin/api/library">
+    <label for="title">Title</label>
+    <input id="title" name="title" required />
+    <label for="url">URL</label>
+    <input id="url" name="url" type="url" required />
+    <label for="description">Description</label>
+    <input id="description" name="description" required />
+    <label for="tags">Tags (comma-separated)</label>
+    <input id="tags" name="tags" />
+    <button type="submit">Add link</button>
+  </form>
+</AdminLayout>
