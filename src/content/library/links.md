@@ -1,5 +1,10 @@
 ---
 links:
+  - title: New link
+    url: 'http://localhost:4321/admin/library/new'
+    description: something
+    tags:
+      - video
   - title: Test Library Link
     url: 'https://example.com'
     description: A test link added via the admin editor
