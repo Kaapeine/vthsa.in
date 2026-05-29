@@ -1,15 +1,5 @@
 ---
 links:
-  - title: New link
-    url: 'http://localhost:4321/admin/library/new'
-    description: something
-    tags:
-      - video
-  - title: Test Library Link
-    url: 'https://example.com'
-    description: A test link added via the admin editor
-    tags:
-      - test
   - title: Using LLMs for code
     url: 'https://simonwillison.net/2025/Mar/11/using-llms-for-code/'
     description: Tips on how to use AI for coding by the creator of Django
