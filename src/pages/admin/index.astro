@@ -1,0 +1,62 @@
+---
+import { getCollection } from 'astro:content';
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { isAuthenticated } from '../../lib/auth';
+
+export const prerender = false;
+
+const loggedIn = isAuthenticated(Astro.request.headers.get('cookie'));
+const error = Astro.url.searchParams.get('error');
+const notice = Astro.url.searchParams.get('notice');
+
+let posts: { slug: string; title: string; pubDate: Date }[] = [];
+if (loggedIn) {
+  const all = await getCollection('blog');
+  posts = all
+    .map((p) => ({ slug: p.id, title: p.data.title, pubDate: p.data.pubDate }))
+    .sort((a, b) => b.pubDate.valueOf() - a.pubDate.valueOf());
+}
+---
+
+<AdminLayout title="admin">
+  {error && <div class="msg error">{error}</div>}
+  {notice && <div class="msg ok">{notice}</div>}
+
+  {!loggedIn ? (
+    <form method="POST" action="/admin/api/login">
+      <h1>admin login</h1>
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autofocus required />
+      <button type="submit">Log in</button>
+    </form>
+  ) : (
+    <>
+      <div class="row" style="justify-content: space-between;">
+        <h1>admin</h1>
+        <form method="POST" action="/admin/api/logout"><button type="submit">Log out</button></form>
+      </div>
+
+      <div class="row">
+        <a href="/admin/new">+ New post</a>
+        <a href="/admin/library/new">+ Add library link</a>
+      </div>
+
+      <h2>Posts</h2>
+      <ul class="posts">
+        {posts.map((p) => (
+          <li>
+            <span style="color:#888; min-width:6rem;">{p.pubDate.toISOString().slice(0, 10)}</span>
+            <a href={`/admin/edit/${p.slug}`} style="flex:1;">{p.title}</a>
+            <form
+              method="POST"
+              action={`/admin/api/posts/${p.slug}/delete`}
+              onsubmit="return confirm('Delete this post?');"
+            >
+              <button type="submit" style="border-color:#743;">Delete</button>
+            </form>
+          </li>
+        ))}
+      </ul>
+    </>
+  )}
+</AdminLayout>
