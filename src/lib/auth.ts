@@ -54,3 +54,40 @@ export function checkPassword(submitted: string): boolean {
   if (a.length !== b.length) return false;
   return crypto.timingSafeEqual(a, b);
 }
+
+// In-memory throttle for failed logins. Single server instance, so a module-level
+// map is sufficient. Resets on deploy/restart, which is acceptable.
+const LOCK_THRESHOLD = 5;
+const LOCK_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+let failures: { count: number; firstAt: number } = { count: 0, firstAt: 0 };
+
+export function isLockedOut(): boolean {
+  if (failures.count < LOCK_THRESHOLD) return false;
+  if (Date.now() - failures.firstAt > LOCK_WINDOW_MS) {
+    failures = { count: 0, firstAt: 0 };
+    return false;
+  }
+  return true;
+}
+
+export function recordFailedLogin(): void {
+  const now = Date.now();
+  if (now - failures.firstAt > LOCK_WINDOW_MS) {
+    failures = { count: 1, firstAt: now };
+  } else {
+    failures.count += 1;
+  }
+}
+
+export function recordSuccessfulLogin(): void {
+  failures = { count: 0, firstAt: 0 };
+}
+
+// Guard for API endpoints: returns a 401 Response if not authenticated, else null.
+export function requireAuth(request: Request): Response | null {
+  if (isAuthenticated(request.headers.get('cookie'))) return null;
+  return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    status: 401,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
