@@ -1,0 +1,41 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { isAuthenticated } from '../../../lib/auth';
+import { getFile } from '../../../lib/github';
+import { parsePostFile } from '../../../lib/content';
+
+export const prerender = false;
+
+if (!isAuthenticated(Astro.request.headers.get('cookie'))) {
+  return Astro.redirect('/admin');
+}
+
+const { slug } = Astro.params;
+const error = Astro.url.searchParams.get('error');
+
+const file = await getFile(`src/content/blog/${slug}.md`);
+if (!file) {
+  return Astro.redirect('/admin?error=' + encodeURIComponent('Post not found'));
+}
+const post = parsePostFile(file.text);
+---
+
+<AdminLayout title="edit post">
+  <a href="/admin">&larr; back</a>
+  <h1>Edit: {post.title}</h1>
+  {error && <div class="msg error">{error}</div>}
+  <form method="POST" action="/admin/api/posts">
+    <input type="hidden" name="mode" value="update" />
+    <input type="hidden" name="slug" value={slug} />
+    <input type="hidden" name="pubDate" value={post.pubDate} />
+    <label for="title">Title</label>
+    <input id="title" name="title" value={post.title} required />
+    <label for="description">Description</label>
+    <input id="description" name="description" value={post.description} required />
+    <label for="tags">Tags (comma-separated)</label>
+    <input id="tags" name="tags" value={post.tags.join(', ')} />
+    <label for="body">Body (markdown)</label>
+    <textarea id="body" name="body" required>{post.body}</textarea>
+    <button type="submit">Save changes</button>
+  </form>
+</AdminLayout>

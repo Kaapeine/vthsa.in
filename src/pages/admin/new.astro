@@ -1,0 +1,32 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { isAuthenticated } from '../../lib/auth';
+import { todayIso } from '../../lib/content';
+
+export const prerender = false;
+
+if (!isAuthenticated(Astro.request.headers.get('cookie'))) {
+  return Astro.redirect('/admin');
+}
+const error = Astro.url.searchParams.get('error');
+---
+
+<AdminLayout title="new post">
+  <a href="/admin">&larr; back</a>
+  <h1>New post</h1>
+  {error && <div class="msg error">{error}</div>}
+  <form method="POST" action="/admin/api/posts">
+    <input type="hidden" name="mode" value="create" />
+    <label for="title">Title</label>
+    <input id="title" name="title" required />
+    <label for="description">Description</label>
+    <input id="description" name="description" required />
+    <label for="tags">Tags (comma-separated)</label>
+    <input id="tags" name="tags" />
+    <label for="pubDate">Publish date</label>
+    <input id="pubDate" name="pubDate" type="date" value={todayIso()} required />
+    <label for="body">Body (markdown)</label>
+    <textarea id="body" name="body" required></textarea>
+    <button type="submit">Publish</button>
+  </form>
+</AdminLayout>
