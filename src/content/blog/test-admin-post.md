@@ -1,8 +1,10 @@
 ---
 title: Test Admin Post
-description: A test post from the admin
+description: Updated description
 pubDate: '2026-05-29'
+updatedDate: '2026-05-29'
 tags:
   - test
+  - admin
 ---
-Hello from the admin editor.
+Updated body from the admin editor.
