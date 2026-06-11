@@ -10,4 +10,7 @@ export default defineConfig({
   site: 'https://vthsa.in',
   integrations: [mdx(), sitemap()],
   adapter: node({ mode: 'standalone' }),
+  security: {
+    checkOrigin: false,
+  },
 });
