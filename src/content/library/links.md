@@ -1,14 +1,24 @@
 ---
 links:
+  - title: Working Youtube Downloader
+    url: 'https://cobalt.meowing.de/'
+    description: Hard to find a good online one nowadays
+    tags:
+      - fun
   - title: The single most important factor that differentiates front-end frameworks
-    url: 'https://mjswensen.com/blog/the-single-most-important-factor-that-differentiates-front-end-frameworks/'
-    description: Comparing how change detection works across different frameworks. React gets too much hate but it does provide the easiest mental model
+    url: >-
+      https://mjswensen.com/blog/the-single-most-important-factor-that-differentiates-front-end-frameworks/
+    description: >-
+      Comparing how change detection works across different frameworks. React
+      gets too much hate but it does provide the easiest mental model
     tags:
       - cs
   - title: Tiny VLLM
     url: 'https://github.com/jmaczan/tiny-vllm'
-    description: A small implementation of an LLM inference engine with a great writeup in the readme
-    tags: 
+    description: >-
+      A small implementation of an LLM inference engine with a great writeup in
+      the readme
+    tags:
       - cs
   - title: What a good website does
     url: 'https://specification.website/'
