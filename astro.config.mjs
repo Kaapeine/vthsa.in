@@ -11,6 +11,11 @@ export default defineConfig({
   integrations: [mdx(), sitemap()],
   adapter: node({ mode: 'standalone' }),
   security: {
-    checkOrigin: false,
+    allowedDomains: [
+      {
+        protocol: 'https',
+        hostname: 'vthsain-production.up.railway.app',
+      },
+    ],
   },
 });
