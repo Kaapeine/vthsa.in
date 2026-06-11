@@ -1,5 +1,10 @@
 ---
 links:
+  - title: The Architecture of Processing.js
+    url: 'https://aosabook.org/en/v2/pjs.html'
+    description: An overview of the Javascript port of the Processing library
+    tags:
+      - cs
   - title: Working Youtube Downloader
     url: 'https://cobalt.meowing.de/'
     description: Hard to find a good online one nowadays
