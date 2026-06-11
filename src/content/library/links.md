@@ -1,10 +1,26 @@
 ---
 links:
+  - title: The single most important factor that differentiates front-end frameworks
+    url: 'https://mjswensen.com/blog/the-single-most-important-factor-that-differentiates-front-end-frameworks/'
+    description: Comparing how change detection works across different frameworks. React gets too much hate but it does provide the easiest mental model
+    tags:
+      - cs
+  - title: Tiny VLLM
+    url: 'https://github.com/jmaczan/tiny-vllm'
+    description: A small implementation of an LLM inference engine with a great writeup in the readme
+    tags: 
+      - cs
+  - title: What a good website does
+    url: 'https://specification.website/'
+    description: A checklist for technical features websites should have
+    tags:
+      - cs
   - title: Using LLMs for code
     url: 'https://simonwillison.net/2025/Mar/11/using-llms-for-code/'
     description: Tips on how to use AI for coding by the creator of Django
     tags:
       - blog
+      - cs
   - title: Mental Funeral - Autopsy
     url: >-
       https://music.youtube.com/playlist?list=OLAK5uy_mODksFTHRqvNkcuMkst56lrkmbtYliWBU&si=3ujikw6x5Mjp3KSP
