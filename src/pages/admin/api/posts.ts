@@ -3,6 +3,7 @@ import { requireAuth } from '../../../lib/auth';
 import { getFile, putFile } from '../../../lib/github';
 import {
   buildPostFile,
+  isValidSlug,
   parseTags,
   slugify,
   todayIso,
@@ -43,6 +44,7 @@ export const POST: APIRoute = async ({ request }) => {
       await putFile(path, buildPostFile(input), `Add post: ${slug}`);
     } else if (mode === 'update') {
       const slug = String(form.get('slug') ?? '');
+      if (!isValidSlug(slug)) return fail('update', form, 'Invalid post slug.', slug);
       const path = `src/content/blog/${slug}.md`;
       const current = await getFile(path);
       if (!current) return fail('update', form, 'Post no longer exists.', slug);

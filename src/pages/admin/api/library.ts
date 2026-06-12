@@ -25,10 +25,14 @@ export const POST: APIRoute = async ({ request }) => {
   if (!title || !url || !description) {
     return fail('Title, URL, and description are required.');
   }
+  let parsedUrl: URL;
   try {
-    new URL(url);
+    parsedUrl = new URL(url);
   } catch {
     return fail('URL is not valid.');
+  }
+  if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+    return fail('URL must start with http:// or https://.');
   }
 
   try {

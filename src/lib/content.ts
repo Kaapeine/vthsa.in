@@ -26,6 +26,15 @@ export function slugify(title: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
+/**
+ * True if a slug is safe to use in a content file path. Restricts to the same
+ * character set `slugify` produces, so a slug can never traverse outside
+ * src/content/blog/ when interpolated into a GitHub API path.
+ */
+export function isValidSlug(slug: string): boolean {
+  return /^[a-z0-9-]+$/.test(slug);
+}
+
 /** Today's date as ISO YYYY-MM-DD (UTC). */
 export function todayIso(): string {
   return new Date().toISOString().slice(0, 10);

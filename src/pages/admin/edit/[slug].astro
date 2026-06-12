@@ -2,7 +2,7 @@
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 import { isAuthenticated } from '../../../lib/auth';
 import { getFile } from '../../../lib/github';
-import { parsePostFile } from '../../../lib/content';
+import { isValidSlug, parsePostFile } from '../../../lib/content';
 
 export const prerender = false;
 
@@ -11,6 +11,9 @@ if (!isAuthenticated(Astro.request.headers.get('cookie'))) {
 }
 
 const { slug } = Astro.params;
+if (!slug || !isValidSlug(slug)) {
+  return Astro.redirect('/admin?error=' + encodeURIComponent('Invalid post slug'));
+}
 const error = Astro.url.searchParams.get('error');
 
 const file = await getFile(`src/content/blog/${slug}.md`);

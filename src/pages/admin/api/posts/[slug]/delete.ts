@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { requireAuth } from '../../../../../lib/auth';
 import { getFile, deleteFile } from '../../../../../lib/github';
+import { isValidSlug } from '../../../../../lib/content';
 
 export const prerender = false;
 
@@ -9,6 +10,9 @@ export const POST: APIRoute = async ({ request, params }) => {
   if (unauthorized) return unauthorized;
 
   const slug = params.slug;
+  if (!slug || !isValidSlug(slug)) {
+    return redirect('/admin?error=' + encodeURIComponent('Invalid post slug.'));
+  }
   const path = `src/content/blog/${slug}.md`;
   try {
     const file = await getFile(path);

@@ -14,7 +14,7 @@ export default defineConfig({
     allowedDomains: [
       {
         protocol: 'https',
-        hostname: 'vthsain-production.up.railway.app',
+        hostname: 'vthsa.in',
       },
     ],
   },
