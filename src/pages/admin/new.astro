@@ -23,8 +23,8 @@ const error = Astro.url.searchParams.get('error');
         <input id="title" name="title" required />
       </div>
       <div class="field">
-        <label for="description">Description</label>
-        <input id="description" name="description" required />
+        <label for="description">Description <span class="optional">(optional)</span></label>
+        <input id="description" name="description" />
       </div>
       <div class="field">
         <label for="tags">Tags (comma-separated)</label>
@@ -33,6 +33,12 @@ const error = Astro.url.searchParams.get('error');
       <div class="field">
         <label for="pubDate">Publish date</label>
         <input id="pubDate" name="pubDate" type="date" value={todayIso()} required />
+      </div>
+      <div class="field field-checkbox">
+        <label>
+          <input type="checkbox" name="draft" value="true" />
+          Draft (hidden from public)
+        </label>
       </div>
       <div class="field field-body">
         <label for="body">Body</label>
@@ -134,6 +140,30 @@ const error = Astro.url.searchParams.get('error');
   .save-btn:hover {
     background-color: #2337ff;
     color: #000;
+  }
+
+  .optional {
+    color: #555;
+    font-weight: normal;
+  }
+
+  .field-checkbox {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .field-checkbox label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #bbb;
+    cursor: pointer;
+  }
+
+  .field-checkbox input[type="checkbox"] {
+    width: auto;
+    accent-color: #2337ff;
   }
 
   @media (max-width: 480px) {
