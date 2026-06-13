@@ -11,6 +11,7 @@ export default defineConfig({
   integrations: [mdx(), sitemap()],
   adapter: node({ mode: 'standalone' }),
   security: {
+    checkOrigin: process.env.NODE_ENV !== 'development',
     allowedDomains: [
       {
         protocol: 'https',
