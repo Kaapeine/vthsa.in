@@ -1,7 +1,7 @@
 ---
 title: 'Ride the wave'
 description: ''
-pubDate: 'May 18 2026'
+pubDate: 'June 9 2026'
 tags: ["writing", "personal"]
 ---
 I had a scare with Tinnitus starting about two weeks ago and the experience has taught me a lot about fear and managing my own internal experiences. The constant ringing was very hard to deal with, and coupled with a fear of losing my hearing, my mind was in a very anxious place. It was hard to think about anything else for that first week. One night, fixating on the ringing actually made it worse. This is the paradoxical thing about tinnitus - thinking about it can make it worse and it's best to ignore it. Common suggestions include putting on music in the background in quiet environments so that the ear and the nervous system has something else to latch on to, which also signals the brain that the ringing is not important and should be depriortized. Ultimately, the issue I had was something viral, and the ringing is almost gone now. But this put me onto the idea that a lot of negative emotions work on similar loops. 
