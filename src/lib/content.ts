@@ -2,11 +2,12 @@ import matter from 'gray-matter';
 
 export interface PostInput {
   title: string;
-  description: string;
+  description?: string;
   body: string;
   tags: string[];
   pubDate: string; // ISO YYYY-MM-DD
   updatedDate?: string; // ISO YYYY-MM-DD, set on edits
+  draft?: boolean;
 }
 
 export interface LibraryLink {
@@ -44,11 +45,12 @@ export function todayIso(): string {
 export function buildPostFile(input: PostInput): string {
   const data: Record<string, unknown> = {
     title: input.title,
-    description: input.description,
     pubDate: input.pubDate,
   };
+  if (input.description) data.description = input.description;
   if (input.updatedDate) data.updatedDate = input.updatedDate;
   if (input.tags.length > 0) data.tags = input.tags;
+  if (input.draft) data.draft = true;
   // gray-matter.stringify serializes `data` as YAML frontmatter above the body.
   return matter.stringify(input.body, data);
 }
@@ -63,11 +65,12 @@ export function parsePostFile(raw: string): PostInput {
   };
   return {
     title: String(data.title ?? ''),
-    description: String(data.description ?? ''),
+    description: data.description ? String(data.description) : undefined,
     body: content.replace(/^\n/, ''),
     tags: Array.isArray(data.tags) ? (data.tags as string[]) : [],
     pubDate: toIso(data.pubDate),
     updatedDate: data.updatedDate ? toIso(data.updatedDate) : undefined,
+    draft: data.draft === true ? true : undefined,
   };
 }
 
