@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { requireAuth } from '../../../lib/auth';
-import { getFile, putFile } from '../../../lib/github';
+import { deleteFile, getFile, putFile } from '../../../lib/github';
 import {
   buildPostFile,
   isValidSlug,
@@ -19,12 +19,13 @@ export const POST: APIRoute = async ({ request }) => {
   const form = await request.formData();
   const mode = String(form.get('mode') ?? '');
   const title = String(form.get('title') ?? '').trim();
-  const description = String(form.get('description') ?? '').trim();
+  const description = String(form.get('description') ?? '').trim() || undefined;
   const body = String(form.get('body') ?? '').trim();
   const tags = parseTags(String(form.get('tags') ?? ''));
+  const draft = form.get('draft') === 'true' ? true : undefined;
 
-  if (!title || !description || !body) {
-    return fail(mode, form, 'Title, description, and body are required.');
+  if (!title || !body) {
+    return fail(mode, form, 'Title and body are required.');
   }
 
   try {
@@ -40,14 +41,20 @@ export const POST: APIRoute = async ({ request }) => {
         body,
         tags,
         pubDate: String(form.get('pubDate') ?? todayIso()),
+        draft,
       };
       await putFile(path, buildPostFile(input), `Add post: ${slug}`);
     } else if (mode === 'update') {
       const slug = String(form.get('slug') ?? '');
       if (!isValidSlug(slug)) return fail('update', form, 'Invalid post slug.', slug);
+
+      const newSlug = String(form.get('newSlug') ?? slug).trim();
+      if (!isValidSlug(newSlug)) return fail('update', form, 'New filename is invalid (lowercase letters, numbers, hyphens only).', slug);
+
       const path = `src/content/blog/${slug}.md`;
       const current = await getFile(path);
       if (!current) return fail('update', form, 'Post no longer exists.', slug);
+
       const input: PostInput = {
         title,
         description,
@@ -55,8 +62,18 @@ export const POST: APIRoute = async ({ request }) => {
         tags,
         pubDate: String(form.get('pubDate') ?? todayIso()),
         updatedDate: todayIso(),
+        draft,
       };
-      await putFile(path, buildPostFile(input), `Update post: ${slug}`, current.sha);
+
+      if (newSlug !== slug) {
+        const newPath = `src/content/blog/${newSlug}.md`;
+        const existing = await getFile(newPath);
+        if (existing) return fail('update', form, 'A post with that filename already exists.', slug);
+        await putFile(newPath, buildPostFile(input), `Rename post: ${slug} → ${newSlug}`);
+        await deleteFile(path, current.sha, `Rename post: ${slug} → ${newSlug} (remove old)`);
+      } else {
+        await putFile(path, buildPostFile(input), `Update post: ${slug}`, current.sha);
+      }
     } else {
       return fail(mode, form, 'Unknown form mode.');
     }
