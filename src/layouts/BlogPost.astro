@@ -31,6 +31,7 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
           }
         </div>
         <h1>{title}</h1>
+        {description && <p class="description">{description}</p>}
         <hr />
       </div>
       <slot />
@@ -70,6 +71,14 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
   }
 
   .last-updated-on {
+    font-style: italic;
+  }
+
+  .description {
+    margin: 0.4em 0 0;
+    padding-bottom: 0.4em;
+    color: rgb(var(--gray));
+    font-size: 0.95em;
     font-style: italic;
   }
 </style>
