@@ -31,18 +31,31 @@ const post = parsePostFile(file.text);
     <form method="POST" action="/admin/api/posts">
       <input type="hidden" name="mode" value="update" />
       <input type="hidden" name="slug" value={slug} />
-      <input type="hidden" name="pubDate" value={post.pubDate} />
       <div class="field">
         <label for="title">Title</label>
         <input id="title" name="title" value={post.title} required />
       </div>
       <div class="field">
-        <label for="description">Description</label>
-        <input id="description" name="description" value={post.description} required />
+        <label for="newSlug">Filename <span class="optional">— changes the URL</span></label>
+        <input id="newSlug" name="newSlug" value={slug} pattern="[a-z0-9-]+" title="Lowercase letters, numbers, and hyphens only" required />
+      </div>
+      <div class="field">
+        <label for="description">Description <span class="optional">(optional)</span></label>
+        <input id="description" name="description" value={post.description ?? ''} />
       </div>
       <div class="field">
         <label for="tags">Tags (comma-separated)</label>
         <input id="tags" name="tags" value={post.tags.join(', ')} />
+      </div>
+      <div class="field">
+        <label for="pubDate">Publish date</label>
+        <input id="pubDate" name="pubDate" type="date" value={post.pubDate} required />
+      </div>
+      <div class="field field-checkbox">
+        <label>
+          <input type="checkbox" name="draft" value="true" checked={post.draft === true} />
+          Draft (hidden from public)
+        </label>
       </div>
       <div class="field field-body">
         <label for="body">Body</label>
@@ -149,6 +162,30 @@ const post = parsePostFile(file.text);
   .save-btn:hover {
     background-color: #2337ff;
     color: #000;
+  }
+
+  .optional {
+    color: #555;
+    font-weight: normal;
+  }
+
+  .field-checkbox {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .field-checkbox label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #bbb;
+    cursor: pointer;
+  }
+
+  .field-checkbox input[type="checkbox"] {
+    width: auto;
+    accent-color: #2337ff;
   }
 
   @media (max-width: 480px) {
