@@ -13,10 +13,6 @@ function applyCors(headers: Headers): void {
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
-// Marker so we can confirm in production which build is actually live (Railway
-// can serve a cached/old build). Bump on every change to the CSRF logic.
-const CSRF_CHECK_VERSION = 'v3';
-
 // Public origins permitted to make state-changing requests. We check the
 // browser's Origin header DIRECTLY against this set — we never reconstruct
 // `url.origin`, so this is immune to the X-Forwarded-Proto problem that breaks
@@ -96,18 +92,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // CSRF: reject cross-site state-changing requests (replaces Astro checkOrigin).
   if (!SAFE_METHODS.has(context.request.method) && !isTrustedOrigin(context)) {
-    return new Response(`Cross-site request forbidden (csrf ${CSRF_CHECK_VERSION})`, {
-      status: 403,
-      headers: { 'X-Csrf-Check': CSRF_CHECK_VERSION },
-    });
+    return new Response('Cross-site request forbidden', { status: 403 });
   }
 
   // Get the response from next middleware/route
   const response = await next();
   const newHeaders = new Headers(response.headers);
   applyCors(newHeaders);
-  // Deploy marker: lets us confirm from any response that this build is live.
-  newHeaders.set('X-Csrf-Check', CSRF_CHECK_VERSION);
 
   // Prevent the admin from being framed (clickjacking) on any /admin route.
   if (context.url.pathname.startsWith('/admin')) {
