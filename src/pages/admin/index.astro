@@ -42,6 +42,7 @@ if (loggedIn) {
     ) : (
       <>
         {notice && <div class="msg ok">{notice}</div>}
+        {error && <div class="msg error">{error}</div>}
         <div class="row" style="justify-content: space-between;">
           <h1>Admin</h1>
         </div>
