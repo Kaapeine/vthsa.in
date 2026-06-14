@@ -1,8 +1,10 @@
 ---
-title: 'Ride the wave'
-description: ''
-pubDate: 'June 9 2026'
-tags: ["writing", "personal"]
+title: Ride the wave
+pubDate: '2026-06-09'
+updatedDate: '2026-06-14'
+tags:
+  - writing
+  - personal
 ---
 I had a scare with Tinnitus starting about two weeks ago and the experience has taught me a lot about fear and managing my own internal experiences. The constant ringing was very hard to deal with, and coupled with a fear of losing my hearing, my mind was in a very anxious place. It was hard to think about anything else for that first week. One night, fixating on the ringing actually made it worse. This is the paradoxical thing about tinnitus - thinking about it can make it worse and it's best to ignore it. Common suggestions include putting on music in the background in quiet environments so that the ear and the nervous system has something else to latch on to, which also signals the brain that the ringing is not important and should be depriortized. Ultimately, the issue I had was something viral, and the ringing is almost gone now. But this put me onto the idea that a lot of negative emotions work on similar loops. 
 
@@ -29,3 +31,5 @@ Ride the wave\
 Look ahead
 
 But how do you deal with it if the waves keep coming? The answer is the same thing, applied one level higher. Accept that the waves are here to stay. All experiences come and go through the mind in waves. You are just the thing it's passing through. There is no feeling or state of mind that is permanent. Ultimately, the moment is all there is and all you have to do right now is ride the current wave towards a place you want. Your personal values, compassion, love of life, art, music, whatever it is that you truly think is worth living for and feel strongly for, that's the place to look towards. Focus on that and let that guide you.
+
+Test.
