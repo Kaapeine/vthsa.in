@@ -15,7 +15,7 @@ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 // Marker so we can confirm in production which build is actually live (Railway
 // can serve a cached/old build). Bump on every change to the CSRF logic.
-const CSRF_CHECK_VERSION = 'v2';
+const CSRF_CHECK_VERSION = 'v3';
 
 // Public origins permitted to make state-changing requests. We check the
 // browser's Origin header DIRECTLY against this set — we never reconstruct
@@ -35,35 +35,55 @@ function trustedOrigins(): string[] {
 
 // Replaces Astro's built-in checkOrigin (disabled in astro.config.mjs).
 function isTrustedOrigin(context: { request: Request; url: URL }): boolean {
-  const origin = context.request.headers.get('origin');
-  // Browsers omit Origin on some same-origin navigations. The admin session
-  // cookie is SameSite=Strict, so a forged cross-site request can't carry it.
-  if (!origin) return true;
-  // Exact match against the known public origins (scheme included).
-  if (trustedOrigins().includes(origin)) return true;
-  // Same-origin fallback: compare hosts (protocol-agnostic) so the Railway
-  // *.up.railway.app domain, preview URLs, and localhost dev all work without
-  // configuration. Railway preserves the public host in Host or x-forwarded-host.
-  let originHost: string;
-  try {
-    originHost = new URL(origin).host;
-  } catch {
+  const req = context.request;
+
+  // PRIMARY signal: Sec-Fetch-Site (Fetch Metadata). It is set by the browser,
+  // cannot be forged by JS (a forbidden header), and — unlike Origin — is NOT
+  // affected by Referrer-Policy. Firefox sends `Origin: null` on a form POST
+  // when the page's Referrer-Policy is `no-referrer`, even for same-origin
+  // submissions, which is exactly what broke us. Sec-Fetch-Site still correctly
+  // reports `same-origin`. Reject only genuinely cross-site requests.
+  const site = req.headers.get('sec-fetch-site');
+  if (site) {
+    // same-origin = from our own page; same-site = our subdomain; none =
+    // user-initiated (typed URL, bookmark). Only cross-site is a CSRF risk.
+    if (site !== 'cross-site') return true;
+    logReject(context, `sec-fetch-site=${site}`);
     return false;
   }
-  if (originHost === context.url.host) return true;
-  const forwardedHost = context.request.headers.get('x-forwarded-host');
-  if (forwardedHost && originHost === forwardedHost.split(',')[0].trim()) return true;
-  // Rejected: log the real headers so a production miss is diagnosable from
-  // Railway logs (which host/origin did the proxy actually send?).
-  console.error('[csrf] rejected cross-site request', {
+
+  // FALLBACK for browsers without Fetch Metadata: explicit Origin allowlist +
+  // protocol-agnostic same-host check. We never reconstruct `url.origin`, so
+  // this is immune to the X-Forwarded-Proto problem behind Railway's proxy.
+  const origin = req.headers.get('origin');
+  // Absent or opaque (`null`) Origin: the SameSite=Strict admin cookie already
+  // prevents a forged cross-site request from carrying credentials.
+  if (!origin || origin === 'null') return true;
+  if (trustedOrigins().includes(origin)) return true;
+  try {
+    const originHost = new URL(origin).host;
+    if (originHost === context.url.host) return true;
+    const forwardedHost = req.headers.get('x-forwarded-host');
+    if (forwardedHost && originHost === forwardedHost.split(',')[0].trim()) return true;
+  } catch {
+    /* fall through to reject */
+  }
+  logReject(context, `origin=${origin}`);
+  return false;
+}
+
+// Logs rejections with the real request headers so a production miss is
+// diagnosable from Railway logs (what did the browser/proxy actually send?).
+function logReject(context: { request: Request; url: URL }, reason: string): void {
+  console.error('[csrf] rejected', {
+    reason,
     method: context.request.method,
     path: context.url.pathname,
-    origin,
+    origin: context.request.headers.get('origin'),
+    secFetchSite: context.request.headers.get('sec-fetch-site'),
     urlHost: context.url.host,
-    xForwardedHost: forwardedHost,
-    xForwardedProto: context.request.headers.get('x-forwarded-proto'),
+    xForwardedHost: context.request.headers.get('x-forwarded-host'),
   });
-  return false;
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {
@@ -94,7 +114,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
     newHeaders.set('Content-Security-Policy', "frame-ancestors 'none'");
     newHeaders.set('X-Frame-Options', 'DENY');
     newHeaders.set('X-Content-Type-Options', 'nosniff');
-    newHeaders.set('Referrer-Policy', 'no-referrer');
+    // `same-origin` (not `no-referrer`): still sends no referrer to external
+    // sites, but lets same-origin form POSTs keep a proper Origin header.
+    // `no-referrer` made Firefox send `Origin: null`, tripping the CSRF check.
+    newHeaders.set('Referrer-Policy', 'same-origin');
   }
 
   return new Response(response.body, {
