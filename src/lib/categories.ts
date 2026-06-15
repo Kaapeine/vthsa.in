@@ -19,6 +19,9 @@ export const categories: Category[] = [
   { id: 'art', label: 'Street art', emoji: '🎨', color: '#e91e63' },
   { id: 'cat', label: 'Cat', emoji: '🐱', color: '#00bcd4' },
   { id: 'dog', label: 'Dog', emoji: '🐶', color: '#00d47f' },
+  { id: 'rest', label: 'Rest', emoji: '🧘‍♂️', color: '#00d47f' },
+  { id: 'view', label: 'View', emoji: '🌅', color: '#00d47f' },
+  { id: 'misc', label: 'Misc', emoji: '📸', color: '#00d47f' },
 ];
 
 const byId = new Map(categories.map((c) => [c.id, c]));

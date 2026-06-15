@@ -61,6 +61,32 @@ export async function putFile(
   }
 }
 
+/**
+ * Create or update a binary file from a Buffer. Pass the existing sha to update;
+ * omit for create. Throws on any non-2xx.
+ */
+export async function putBinaryFile(
+  path: string,
+  content: Buffer,
+  message: string,
+  sha?: string,
+): Promise<void> {
+  const body: Record<string, string> = {
+    message,
+    content: content.toString('base64'),
+    branch: config.githubBranch(),
+  };
+  if (sha) body.sha = sha;
+  const res = await fetch(contentsUrl(path), {
+    method: 'PUT',
+    headers: headers(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new Error(`GitHub putBinaryFile failed (${res.status}): ${await res.text()}`);
+  }
+}
+
 /** Delete a file by path + sha. Throws on any non-2xx. */
 export async function deleteFile(path: string, sha: string, message: string): Promise<void> {
   const res = await fetch(contentsUrl(path), {
