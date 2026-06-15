@@ -61,4 +61,16 @@ const library = defineCollection({
 	}),
 });
 
-export const collections = { blog, projects, music, library };
+const map = defineCollection({
+	loader: glob({ base: './src/content/map', pattern: '**/*.md' }),
+	schema: z.object({
+		title: z.string(),
+		category: z.string(),
+		lat: z.number(),
+		lng: z.number(),
+		image: z.string().optional(),
+		pubDate: z.coerce.date(),
+	}),
+});
+
+export const collections = { blog, projects, music, library, map };
