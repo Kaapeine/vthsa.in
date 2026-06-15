@@ -33,7 +33,11 @@ const tags = entries.map((e) => ({
   </head>
   <body>
     <header class="map-header">
-      <a href="/" class="site-link">{SITE_TITLE}</a>
+      <div class="site-link">
+        <a href="/">{SITE_TITLE}</a>
+        <span class="sep">/</span>
+        <a href="/sightings">Sightings</a>
+      </div>
       <div class="controls">
         <button id="toggle-filter" type="button">Filter</button>
         <button id="toggle-legend" type="button">Legend</button>
@@ -211,6 +215,16 @@ const tags = entries.map((e) => ({
             filterPanel.hidden = true;
             legendPanel.hidden = !legendPanel.hidden;
           });
+
+          // Keep panels below the header regardless of its height.
+          const header = document.querySelector('.map-header');
+          function updatePanelTop() {
+            const bottom = header.getBoundingClientRect().bottom + 8;
+            filterPanel.style.top = bottom + 'px';
+            legendPanel.style.top = bottom + 'px';
+          }
+          updatePanelTop();
+          window.addEventListener('resize', updatePanelTop);
         }
       })();
     </script>
@@ -330,9 +344,11 @@ const tags = entries.map((e) => ({
   }
   .map-header {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 0.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 2rem);
+    max-width: 900px;
     z-index: 1000;
     height: 3rem;
     display: flex;
@@ -340,18 +356,38 @@ const tags = entries.map((e) => ({
     justify-content: space-between;
     padding: 0 1.25rem;
     background: rgba(0, 0, 0, 0.92);
-    border-bottom: 1px solid #222;
+    border: 1px solid #222;
+    border-radius: 8px;
     box-sizing: border-box;
   }
+  @media (max-width: 480px) {
+    .map-header {
+      height: auto;
+      padding: 0.6rem 1rem;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .site-link {
+      width: 100%;
+    }
+  }
   .site-link {
-    color: #fff;
-    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
     font-size: 0.85rem;
     letter-spacing: 0.04em;
   }
-  .site-link:hover {
-    color: var(--accent);
+  .site-link a {
+    color: #fff;
     text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  .site-link a:hover {
+    color: var(--accent);
+  }
+  .sep {
+    color: #444;
   }
   .controls {
     display: flex;
@@ -373,15 +409,14 @@ const tags = entries.map((e) => ({
     color: #000;
   }
   #map {
-    margin-top: 3rem;
-    height: calc(100vh - 3rem);
+    margin-top: 0;
+    height: 100vh;
     width: 100%;
     z-index: 1;
   }
   .panel {
     position: fixed;
-    top: 3.5rem;
-    right: 0.75rem;
+    right: 1rem;
     z-index: 1000;
     min-width: 11rem;
     max-width: 80vw;
@@ -389,6 +424,11 @@ const tags = entries.map((e) => ({
     border: 1px solid #333;
     border-radius: 4px;
     padding: 0.6rem 0.85rem 0.75rem;
+  }
+  @media (min-width: 918px) {
+    .panel {
+      right: calc((100vw - 900px) / 2);
+    }
   }
   .panel-label {
     font-size: 0.7rem;
