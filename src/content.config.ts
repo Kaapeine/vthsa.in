@@ -28,6 +28,8 @@ const projects = defineCollection({
 		date: z.coerce.date(),
 		// When true, list items link straight to externalUrl instead of a detail page.
 		onlyLink: z.boolean().optional(),
+		// Card thumbnail (path or URL). When set, used instead of fetching the external og:image.
+		thumbnailImage: z.string().optional(),
 		tags: z.array(z.string()).optional(),
 	}),
 });
@@ -41,6 +43,8 @@ const music = defineCollection({
 		date: z.coerce.date(),
 		// When true, list items link straight to externalUrl instead of a detail page.
 		onlyLink: z.boolean().optional(),
+		// Card thumbnail (path or URL). When set, used instead of fetching the external og:image.
+		thumbnailImage: z.string().optional(),
 		tags: z.array(z.string()).optional(),
 	}),
 });

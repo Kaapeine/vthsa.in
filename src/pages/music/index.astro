@@ -29,7 +29,7 @@ const raw = (await getCollection('music')).sort(
 const tracks = await Promise.all(
   raw.map(async (t) => ({
     ...t,
-    ogImage: await getOgImage(t.data.externalUrl),
+    thumb: t.data.thumbnailImage ?? (await getOgImage(t.data.externalUrl)),
   })),
 );
 ---
@@ -50,8 +50,8 @@ const tracks = await Promise.all(
               ? { target: '_blank', rel: 'noopener noreferrer' }
               : {})}
           >
-            {track.ogImage && (
-              <img src={track.ogImage} alt="" class="card-img" />
+            {track.thumb && (
+              <img src={track.thumb} alt="" class="card-img" />
             )}
             <div class="card-body">
               <span class="card-title">{track.data.title}</span>
@@ -92,9 +92,11 @@ const tracks = await Promise.all(
     border-color: var(--accent);
   }
   .card-img {
+    display: block;
     width: 100px;
     height: 100px;
     object-fit: cover;
+    object-position: center;
     flex-shrink: 0;
     padding: 0.75rem;
   }

@@ -29,7 +29,7 @@ const raw = (await getCollection('projects')).sort(
 const projects = await Promise.all(
   raw.map(async (p) => ({
     ...p,
-    ogImage: await getOgImage(p.data.externalUrl),
+    thumb: p.data.thumbnailImage ?? (await getOgImage(p.data.externalUrl)),
   })),
 );
 ---
@@ -50,8 +50,8 @@ const projects = await Promise.all(
               ? { target: '_blank', rel: 'noopener noreferrer' }
               : {})}
           >
-            {project.ogImage && (
-              <img src={project.ogImage} alt="" class="card-img" />
+            {project.thumb && (
+              <img src={project.thumb} alt="" class="card-img" />
             )}
             <div class="card-body">
               <span class="card-title">{project.data.title}</span>
@@ -92,9 +92,11 @@ const projects = await Promise.all(
     border-color: var(--accent);
   }
   .card-img {
+    display: block;
     width: 160px;
     height: 100px;
     object-fit: cover;
+    object-position: center;
     flex-shrink: 0;
     align-self: center;
     padding: 0.75rem;

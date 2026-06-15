@@ -2,7 +2,7 @@
 links:
   - title: The Architecture of Processing.js
     url: 'https://aosabook.org/en/v2/pjs.html'
-    description: An overview of the Javascript port of the Processing library
+    description: Running Processing code by transcompiling Java to Javascript
     tags:
       - cs
   - title: Working Youtube Downloader
@@ -14,8 +14,7 @@ links:
     url: >-
       https://mjswensen.com/blog/the-single-most-important-factor-that-differentiates-front-end-frameworks/
     description: >-
-      Comparing how change detection works across different frameworks. React
-      gets too much hate but it does provide the easiest mental model
+      React gets too much hate but it does provide the easiest mental model for handling change detection
     tags:
       - cs
   - title: Tiny VLLM
