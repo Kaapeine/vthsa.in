@@ -23,6 +23,13 @@ const tags = entries.map((e) => ({
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Sightings · {SITE_TITLE}</title>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-F2JHBLXS0H"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-F2JHBLXS0H');
+    </script>
   </head>
   <body>
     <header class="map-header">
