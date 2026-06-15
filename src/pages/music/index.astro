@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
 import { SITE_DESCRIPTION } from '../../consts';
 
 async function getOgImage(url: string): Promise<string | null> {
@@ -22,7 +23,7 @@ async function getOgImage(url: string): Promise<string | null> {
 }
 
 const raw = (await getCollection('music')).sort(
-  (a, b) => b.data.year - a.data.year,
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
 );
 
 const tracks = await Promise.all(
@@ -38,7 +39,17 @@ const tracks = await Promise.all(
     {
       tracks.map((track) => (
         <li>
-          <a href={`/music/${track.id}/`} class="card">
+          <a
+            href={
+              track.data.onlyLink
+                ? track.data.externalUrl
+                : `/music/${track.id}/`
+            }
+            class="card"
+            {...(track.data.onlyLink
+              ? { target: '_blank', rel: 'noopener noreferrer' }
+              : {})}
+          >
             {track.ogImage && (
               <img src={track.ogImage} alt="" class="card-img" />
             )}
@@ -46,7 +57,7 @@ const tracks = await Promise.all(
               <span class="card-title">{track.data.title}</span>
               <span class="card-desc">{track.data.description}</span>
               <div class="card-meta">
-                <span class="year">{track.data.year}</span>
+                {/* <FormattedDate date={track.data.date} /> */}
                 {track.data.tags?.map((tag) => (
                   <span class="tag">#{tag}</span>
                 ))}

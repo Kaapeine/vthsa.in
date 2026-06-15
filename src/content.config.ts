@@ -25,7 +25,9 @@ const projects = defineCollection({
 		title: z.string(),
 		description: z.string(),
 		externalUrl: z.string(),
-		year: z.number(),
+		date: z.coerce.date(),
+		// When true, list items link straight to externalUrl instead of a detail page.
+		onlyLink: z.boolean().optional(),
 		tags: z.array(z.string()).optional(),
 	}),
 });
@@ -36,7 +38,9 @@ const music = defineCollection({
 		title: z.string(),
 		description: z.string(),
 		externalUrl: z.string(),
-		year: z.number(),
+		date: z.coerce.date(),
+		// When true, list items link straight to externalUrl instead of a detail page.
+		onlyLink: z.boolean().optional(),
 		tags: z.array(z.string()).optional(),
 	}),
 });

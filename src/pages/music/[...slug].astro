@@ -1,19 +1,22 @@
 ---
 import { type CollectionEntry, getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
 
 export async function getStaticPaths() {
   const tracks = await getCollection('music');
-  return tracks.map((track) => ({
-    params: { slug: track.id },
-    props: track,
-  }));
+  return tracks
+    .filter((track) => !track.data.onlyLink)
+    .map((track) => ({
+      params: { slug: track.id },
+      props: track,
+    }));
 }
 type Props = CollectionEntry<'music'>;
 
 const track = Astro.props;
 const { Content } = await render(track);
-const { title, description, externalUrl, year, tags } = track.data;
+const { title, description, externalUrl, date, tags } = track.data;
 ---
 
 <BaseLayout title={title} description={description}>
@@ -22,7 +25,7 @@ const { title, description, externalUrl, year, tags } = track.data;
       <div class="header">
         <h1>{title}</h1>
         <div class="meta">
-          <span class="year">{year}</span>
+          <FormattedDate date={date} />
           {tags?.map((tag) => <span class="tag">#{tag}</span>)}
         </div>
         <p class="description">{description}</p>

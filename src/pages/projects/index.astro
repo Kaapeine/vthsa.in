@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
 import { SITE_DESCRIPTION } from '../../consts';
 
 async function getOgImage(url: string): Promise<string | null> {
@@ -22,7 +23,7 @@ async function getOgImage(url: string): Promise<string | null> {
 }
 
 const raw = (await getCollection('projects')).sort(
-  (a, b) => b.data.year - a.data.year,
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
 );
 
 const projects = await Promise.all(
@@ -38,7 +39,17 @@ const projects = await Promise.all(
     {
       projects.map((project) => (
         <li>
-          <a href={`/projects/${project.id}/`} class="card">
+          <a
+            href={
+              project.data.onlyLink
+                ? project.data.externalUrl
+                : `/projects/${project.id}/`
+            }
+            class="card"
+            {...(project.data.onlyLink
+              ? { target: '_blank', rel: 'noopener noreferrer' }
+              : {})}
+          >
             {project.ogImage && (
               <img src={project.ogImage} alt="" class="card-img" />
             )}
@@ -46,7 +57,7 @@ const projects = await Promise.all(
               <span class="card-title">{project.data.title}</span>
               <span class="card-desc">{project.data.description}</span>
               <div class="card-meta">
-                <span class="year">{project.data.year}</span>
+                <FormattedDate date={project.data.date} />
                 {project.data.tags?.map((tag) => (
                   <span class="tag">#{tag}</span>
                 ))}

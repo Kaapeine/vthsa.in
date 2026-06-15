@@ -1,8 +1,8 @@
 ---
-title: 'This website'
+title: 'This Website'
 description: 'How I built this website in Astro'
 externalUrl: 'https://vthsa.in'
-year: 2026
+date: 2026-01-01
 tags: ['astro', 'webdev', 'p5.js']
 ---
 

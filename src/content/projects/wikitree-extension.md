@@ -3,7 +3,7 @@ title: 'WikiTree Chrome Extension'
 description: 'A Chrome extension to visualize Wikipedia rabbit holes as interactive trees, built using TypeScript and
 React'
 externalUrl: 'https://chromewebstore.google.com/detail/wikitree/gmepfbiaaamedihnliggicgbphigbcje?hl=en&pli=1'
-year: 2023
+date: 2024-03-02
 tags: ['typescript', 'chrome-extensions']
 ---
 
