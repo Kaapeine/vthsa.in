@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import sharp from 'sharp';
 import { requireAuth } from '../../../lib/auth';
-import { getFile, putFile, putBinaryFile } from '../../../lib/github';
+import { getFile, putFile, putBinaryFile, deleteFile } from '../../../lib/github';
 import { isValidSlug, slugify, todayIso } from '../../../lib/content';
 import {
   buildTagFile,
@@ -66,8 +66,13 @@ export const POST: APIRoute = async ({ request }) => {
       const current = await getFile(tagPath(slug));
       if (!current) return fail('update', form, 'Tag no longer exists.', slug);
 
+      const removeImage = form.get('removeImage') === 'true';
       let imageName = String(form.get('existingImage') ?? '').trim() || undefined;
-      if (hasImage) {
+      if (removeImage && imageName) {
+        const existingImg = await getFile(tagImagePath(slug));
+        if (existingImg) await deleteFile(tagImagePath(slug), existingImg.sha, `Delete map image: ${slug}`);
+        imageName = undefined;
+      } else if (hasImage) {
         const resized = await resizeImage(imageField as File);
         const existingImg = await getFile(tagImagePath(slug));
         await putBinaryFile(tagImagePath(slug), resized, `Update map image: ${slug}`, existingImg?.sha);

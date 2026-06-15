@@ -67,6 +67,10 @@ const tag = parseTagFile(file.text);
         <div class="field">
           <label>Current photo</label>
           <img class="current-img" src={tagImageUrl(tag.image)} alt={tag.title} />
+          <label class="checkbox-label">
+            <input type="checkbox" name="removeImage" value="true" />
+            Remove photo
+          </label>
         </div>
       )}
 
@@ -340,6 +344,21 @@ const tag = parseTagFile(file.text);
     border: none;
     padding: 0;
     background: none;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    color: #bbb;
+    cursor: pointer;
+    letter-spacing: normal;
+  }
+
+  .checkbox-label input[type='checkbox'] {
+    width: auto;
+    accent-color: #2337ff;
   }
 
   .optional {
