@@ -18,7 +18,7 @@ So the first step is just recognizing that first arrow. See it as a thought sepa
 
 > "X might happen, what do I do?" -> "I am feeling afraid of X"
 
-It seems like a small shift but it changes your relationship to the thought. The second step, to avoid firing the next arrow, is to just sit with the the feeling without attempting to resolve it. Expecting it to pass is also a sublte form of resistance too. The feeling is okay to feel for as long as it lasts, without any expectation that it will resolve.
+It seems like a small shift but it changes your relationship to the thought. The second step, to avoid firing the next arrow, is to just sit with the the feeling without attempting to resolve it. Expecting it to pass is also a subtle form of resistance too. The feeling is okay to feel for as long as it lasts, without any expectation that it will resolve.
 
 > "It's okay to feel afraid of X"
 > "Whatever I am feeling is okay to feel"
@@ -31,5 +31,3 @@ Ride the wave\
 Look ahead
 
 But how do you deal with it if the waves keep coming? The answer is the same thing, applied one level higher. Accept that the waves are here to stay. All experiences come and go through the mind in waves. You are just the thing it's passing through. There is no feeling or state of mind that is permanent. Ultimately, the moment is all there is and all you have to do right now is ride the current wave towards a place you want. Your personal values, compassion, love of life, art, music, whatever it is that you truly think is worth living for and feel strongly for, that's the place to look towards. Focus on that and let that guide you.
-
-Test.

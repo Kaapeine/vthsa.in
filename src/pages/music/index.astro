@@ -35,6 +35,13 @@ const tracks = await Promise.all(
 ---
 
 <BaseLayout title="Music" description={SITE_DESCRIPTION}>
+  <p>
+    I love making music and I keep experimenting with different styles. I like
+    playing rock, blues and metal, and I also like to make Ableton Live
+    electronic music sets, esp ambient and drone music.
+    <br />
+    Find my music through the links below:
+  </p>
   <ul>
     {
       tracks.map((track) => (
@@ -50,9 +57,7 @@ const tracks = await Promise.all(
               ? { target: '_blank', rel: 'noopener noreferrer' }
               : {})}
           >
-            {track.thumb && (
-              <img src={track.thumb} alt="" class="card-img" />
-            )}
+            {track.thumb && <img src={track.thumb} alt="" class="card-img" />}
             <div class="card-body">
               <span class="card-title">{track.data.title}</span>
               <span class="card-desc">{track.data.description}</span>
