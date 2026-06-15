@@ -42,7 +42,10 @@ const tags = entries.map((e) => ({
       <img id="modal-img" src="" alt="" hidden />
       <div id="modal-body">
         <strong id="modal-title"></strong>
-        <span id="modal-meta"></span>
+        <div id="modal-meta-row">
+          <span id="modal-meta"></span>
+          <span id="modal-coords"></span>
+        </div>
         <p id="modal-notes" hidden></p>
       </div>
     </div>
@@ -95,9 +98,9 @@ const tags = entries.map((e) => ({
             return L.divIcon({
               className: 'emoji-marker',
               html: `<span>${c ? c.emoji : '📍'}</span>`,
-              iconSize: [30, 30],
-              iconAnchor: [15, 15],
-              popupAnchor: [0, -14],
+              iconSize: [38, 38],
+              iconAnchor: [19, 19],
+              popupAnchor: [0, -18],
             });
           }
 
@@ -106,6 +109,7 @@ const tags = entries.map((e) => ({
           const modalImg = document.getElementById('modal-img');
           const modalTitle = document.getElementById('modal-title');
           const modalMeta = document.getElementById('modal-meta');
+          const modalCoords = document.getElementById('modal-coords');
           const modalNotes = document.getElementById('modal-notes');
           const modalClose = document.getElementById('modal-close');
 
@@ -120,6 +124,7 @@ const tags = entries.map((e) => ({
             modalTitle.textContent = t.title;
             const cat = catById[t.category];
             modalMeta.textContent = `${cat ? cat.emoji : '📍'} ${cat ? cat.label : t.category} · ${t.date}`;
+            modalCoords.textContent = `${t.lat.toFixed(4)}, ${t.lng.toFixed(4)}`;
             if (t.notes) {
               modalNotes.textContent = t.notes;
               modalNotes.hidden = false;
@@ -207,11 +212,17 @@ const tags = entries.map((e) => ({
 
 <style is:global>
   .emoji-marker span {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     line-height: 1;
-    display: block;
-    text-align: center;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1.5px solid #2337ff;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
   }
   #tag-backdrop {
     position: fixed;
@@ -283,9 +294,21 @@ const tags = entries.map((e) => ({
     margin: 0;
     white-space: pre-wrap;
   }
+  #modal-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
   #modal-meta {
     font-size: 0.75rem;
     color: #666;
+  }
+  #modal-coords {
+    font-size: 0.72rem;
+    color: #444;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
   @media (min-width: 768px) {
     #tag-modal { max-width: 740px; }
