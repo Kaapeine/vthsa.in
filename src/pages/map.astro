@@ -1,0 +1,382 @@
+---
+import { getCollection } from 'astro:content';
+import { categories } from '../lib/categories';
+import { tagImageUrl } from '../lib/map';
+import { SITE_TITLE } from '../consts';
+import '../styles/global.css';
+
+const entries = await getCollection('map');
+const tags = entries.map((e) => ({
+  title: e.data.title,
+  category: e.data.category,
+  lat: e.data.lat,
+  lng: e.data.lng,
+  image: e.data.image ? tagImageUrl(e.data.image) : null,
+  notes: e.body ?? '',
+  date: e.data.pubDate.toISOString().slice(0, 10),
+}));
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Map · {SITE_TITLE}</title>
+  </head>
+  <body>
+    <header class="map-header">
+      <a href="/" class="site-link">{SITE_TITLE}</a>
+      <div class="controls">
+        <button id="toggle-filter" type="button">Filter</button>
+        <button id="toggle-legend" type="button">Legend</button>
+      </div>
+    </header>
+
+    <div id="map"></div>
+
+    <!-- Custom tag modal (replaces Leaflet popup) -->
+    <div id="tag-backdrop" hidden></div>
+    <div id="tag-modal" hidden>
+      <button id="modal-close" type="button" aria-label="Close">✕</button>
+      <img id="modal-img" src="" alt="" hidden />
+      <div id="modal-body">
+        <strong id="modal-title"></strong>
+        <span id="modal-meta"></span>
+        <p id="modal-notes" hidden></p>
+      </div>
+    </div>
+
+    <aside id="filter-panel" class="panel" hidden>
+      <p class="panel-label">Filter</p>
+      <div id="filter-list"></div>
+    </aside>
+
+    <aside id="legend-panel" class="panel" hidden>
+      <p class="panel-label">Legend</p>
+      <div id="legend-list"></div>
+    </aside>
+
+    <script id="map-data" type="application/json" set:html={JSON.stringify({ tags, categories })}></script>
+
+    <script is:inline>
+      (function () {
+        // Load Leaflet CSS + JS dynamically so init is guaranteed to run after L is defined.
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+        link.crossOrigin = '';
+        document.head.appendChild(link);
+
+        const s = document.createElement('script');
+        s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        s.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+        s.crossOrigin = '';
+        s.onload = initMap;
+        document.head.appendChild(s);
+
+        function escapeHtml(str) {
+          return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+        }
+
+        function initMap() {
+          const { tags, categories } = JSON.parse(
+            document.getElementById('map-data').textContent
+          );
+          const catById = Object.fromEntries(categories.map((c) => [c.id, c]));
+
+          function iconFor(catId) {
+            const c = catById[catId];
+            return L.divIcon({
+              className: 'emoji-marker',
+              html: `<span>${c ? c.emoji : '📍'}</span>`,
+              iconSize: [30, 30],
+              iconAnchor: [15, 15],
+              popupAnchor: [0, -14],
+            });
+          }
+
+          const backdrop = document.getElementById('tag-backdrop');
+          const modal = document.getElementById('tag-modal');
+          const modalImg = document.getElementById('modal-img');
+          const modalTitle = document.getElementById('modal-title');
+          const modalMeta = document.getElementById('modal-meta');
+          const modalNotes = document.getElementById('modal-notes');
+          const modalClose = document.getElementById('modal-close');
+
+          function openModal(t) {
+            if (t.image) {
+              modalImg.src = t.image;
+              modalImg.alt = t.title;
+              modalImg.hidden = false;
+            } else {
+              modalImg.hidden = true;
+            }
+            modalTitle.textContent = t.title;
+            const cat = catById[t.category];
+            modalMeta.textContent = `${cat ? cat.emoji : '📍'} ${cat ? cat.label : t.category} · ${t.date}`;
+            if (t.notes) {
+              modalNotes.textContent = t.notes;
+              modalNotes.hidden = false;
+            } else {
+              modalNotes.hidden = true;
+            }
+            backdrop.hidden = false;
+            modal.hidden = false;
+          }
+
+          function closeModal() {
+            backdrop.hidden = true;
+            modal.hidden = true;
+          }
+
+          modalClose.addEventListener('click', closeModal);
+          backdrop.addEventListener('click', closeModal);
+
+          const map = L.map('map');
+          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors',
+          }).addTo(map);
+
+          const groups = {};
+          for (const c of categories) groups[c.id] = L.layerGroup().addTo(map);
+          const uncategorized = L.layerGroup().addTo(map);
+
+          const bounds = [];
+          for (const t of tags) {
+            const marker = L.marker([t.lat, t.lng], { icon: iconFor(t.category) });
+            marker.on('click', () => openModal(t));
+            (groups[t.category] || uncategorized).addLayer(marker);
+            bounds.push([t.lat, t.lng]);
+          }
+
+          if (bounds.length > 0) {
+            map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+          } else {
+            map.setView([20, 0], 2);
+          }
+
+          // Filter — only show categories that have at least one tag.
+          const usedCatIds = new Set(tags.map((t) => t.category));
+          const filterList = document.getElementById('filter-list');
+          for (const c of categories) {
+            if (!usedCatIds.has(c.id)) continue;
+            const row = document.createElement('label');
+            row.className = 'filter-row';
+            row.innerHTML = `<input type="checkbox" checked /> <span>${c.emoji} ${escapeHtml(c.label)}</span>`;
+            const input = row.querySelector('input');
+            input.addEventListener('change', () => {
+              if (input.checked) map.addLayer(groups[c.id]);
+              else map.removeLayer(groups[c.id]);
+            });
+            filterList.appendChild(row);
+          }
+
+          // Legend — all categories.
+          const legendList = document.getElementById('legend-list');
+          for (const c of categories) {
+            const row = document.createElement('div');
+            row.className = 'legend-row';
+            row.innerHTML = `<span>${c.emoji}</span> <span>${escapeHtml(c.label)}</span>`;
+            legendList.appendChild(row);
+          }
+
+          // Panel toggles — mutually exclusive.
+          const filterPanel = document.getElementById('filter-panel');
+          const legendPanel = document.getElementById('legend-panel');
+          document.getElementById('toggle-filter').addEventListener('click', () => {
+            legendPanel.hidden = true;
+            filterPanel.hidden = !filterPanel.hidden;
+          });
+          document.getElementById('toggle-legend').addEventListener('click', () => {
+            filterPanel.hidden = true;
+            legendPanel.hidden = !legendPanel.hidden;
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  .emoji-marker span {
+    font-size: 1.5rem;
+    line-height: 1;
+    display: block;
+    text-align: center;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+  }
+  #tag-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.7);
+  }
+  #tag-backdrop[hidden],
+  #tag-modal[hidden] {
+    display: none !important;
+  }
+  #tag-modal {
+    position: fixed;
+    z-index: 2001;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90vw;
+    max-width: 520px;
+    /* widened on desktop via media query below */
+    max-height: 80vh;
+    background: #0a0a0a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: 'Space Mono', monospace;
+  }
+  #modal-close {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.75rem;
+    z-index: 1;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #modal-img {
+    width: 100%;
+    max-height: 50vh;
+    object-fit: cover;
+    display: block;
+    flex-shrink: 0;
+  }
+  #modal-body {
+    padding: 1rem 1.25rem 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  #modal-title {
+    font-size: 1rem;
+    color: #fff;
+  }
+  #modal-notes {
+    font-size: 0.82rem;
+    color: #aaa;
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-wrap;
+  }
+  #modal-meta {
+    font-size: 0.75rem;
+    color: #666;
+  }
+  @media (min-width: 768px) {
+    #tag-modal { max-width: 740px; }
+  }
+</style>
+
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  .map-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.25rem;
+    background: rgba(0, 0, 0, 0.92);
+    border-bottom: 1px solid #222;
+    box-sizing: border-box;
+  }
+  .site-link {
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+  }
+  .site-link:hover {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .controls {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .controls button {
+    font: inherit;
+    font-size: 0.78rem;
+    color: var(--accent);
+    background: transparent;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 0.25rem 0.65rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  .controls button:hover {
+    background: var(--accent);
+    color: #000;
+  }
+  #map {
+    margin-top: 3rem;
+    height: calc(100vh - 3rem);
+    width: 100%;
+    z-index: 1;
+  }
+  .panel {
+    position: fixed;
+    top: 3.5rem;
+    right: 0.75rem;
+    z-index: 1000;
+    min-width: 11rem;
+    max-width: 80vw;
+    background: rgba(0, 0, 0, 0.93);
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.6rem 0.85rem 0.75rem;
+  }
+  .panel-label {
+    font-size: 0.7rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 0.4rem;
+  }
+  .filter-row,
+  .legend-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.2rem 0;
+    font-size: 0.82rem;
+    cursor: pointer;
+    color: #eee;
+  }
+  .filter-row input[type='checkbox'] {
+    accent-color: var(--accent);
+  }
+</style>
