@@ -11,6 +11,8 @@ I had an idea to build out a tool for musicians and composers that would help th
 
 I chose Python for the backend because it has the most support for audio analysis workflows. And to keep things simple, I used FastAPI for the HTTP handlers and also to serve the frontend statically. The frontend is built as a React SPA. I used PostgreSQL for the database layer to store the analysis results. In hindsight, I could've gone with a much lighter database as I had to use Docker Compose to be able to run an isolated version of PostgreSQL just for my app. 
 
+I moved on from this project onto CohereMix, because the data I was able to get wasn't going to be very useful to musicians. Section detection and labelling was off most of the time. It would label so many sections 'Solo'. The key detection was correct, but what about songs where the key changes? Beat detection was actually solid. The signal lanes had useful metrics such as loudness, but then I realized they weren't that helpful unless compared to another track. That line of thinking eventually led to the next iteration of this, CohereMix, which is a reference track mix comparision app.
+
 ![upload](./../../../public/songcomposition_upload.png)
 ![loading](./../../../public/songcomposition_loading.png)
 ![thumbnail](./../../../public/songcomposition_thumbnail.png)
