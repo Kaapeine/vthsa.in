@@ -13,15 +13,16 @@ export interface Category {
 export const categories: Category[] = [
   { id: 'nature', label: 'Nature', emoji: '🌳', color: '#4caf50' },
   { id: 'food', label: 'Food', emoji: '🌯', color: '#ff9800' },
+  { id: 'bars', label: 'Bars', emoji: '🍻', color: '#cac441' },
   { id: 'smokeshop', label: 'Sutta', emoji: '🚬', color: '#737676' },
   { id: 'easteregg', label: 'Easter Egg', emoji: '🌀', color: '#03a9f4' },
   { id: 'houses', label: 'Houses', emoji: '🛖', color: '#9c27b0' },
   { id: 'art', label: 'Street art', emoji: '🎨', color: '#e91e63' },
   { id: 'cat', label: 'Cat', emoji: '🐱', color: '#00bcd4' },
   { id: 'dog', label: 'Dog', emoji: '🐶', color: '#00d47f' },
-  { id: 'rest', label: 'Rest', emoji: '🧘‍♂️', color: '#00d47f' },
-  { id: 'view', label: 'View', emoji: '🌅', color: '#00d47f' },
-  { id: 'misc', label: 'Misc', emoji: '📸', color: '#00d47f' },
+  { id: 'rest', label: 'Rest', emoji: '🧘‍♂️', color: '#8fc7d2' },
+  { id: 'view', label: 'View', emoji: '🌅', color: '#914980' },
+  { id: 'misc', label: 'Misc', emoji: '📸', color: '#dbc440' },
 ];
 
 const byId = new Map(categories.map((c) => [c.id, c]));
