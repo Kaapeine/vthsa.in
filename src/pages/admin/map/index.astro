@@ -1,0 +1,81 @@
+---
+import { getCollection } from 'astro:content';
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { isAuthenticated } from '../../../lib/auth';
+
+export const prerender = false;
+
+if (!isAuthenticated(Astro.request.headers.get('cookie'))) {
+  return Astro.redirect('/admin');
+}
+const notice = Astro.url.searchParams.get('notice');
+const error = Astro.url.searchParams.get('error');
+
+const all = await getCollection('map');
+const tags = all
+  .map((t) => ({ slug: t.id, title: t.data.title, pubDate: t.data.pubDate }))
+  .sort((a, b) => b.pubDate.valueOf() - a.pubDate.valueOf());
+---
+
+<AdminLayout title="manage tags">
+  <a href="/admin" class="back">&larr; back</a>
+  <div class="row">
+    <h1>Map tags</h1>
+    <button class="enter-btn" onclick="window.location.href='/admin/map/new'">+ New tag</button>
+  </div>
+  {notice && <div class="msg ok">{notice}</div>}
+  {error && <div class="msg error">{error}</div>}
+
+  <ul class="posts">
+    {tags.map((t) => (
+      <li>
+        <span style="color:#888; min-width:6rem; margin-right: 1em;">
+          {t.pubDate.toISOString().slice(0, 10)}
+        </span>
+        <a href={`/admin/map/edit/${t.slug}`} style="flex:1;">{t.title}</a>
+        <form
+          method="POST"
+          action={`/admin/api/map/${t.slug}/delete`}
+          onsubmit="return confirm('Delete this tag?');"
+        >
+          <button type="submit" class="enter-btn">Delete</button>
+        </form>
+      </li>
+    ))}
+  </ul>
+</AdminLayout>
+
+<style>
+  .back { font-size: 0.85rem; color: #6cf; text-decoration: none; display: inline-block; margin-bottom: 0.5rem; }
+  h1 { font-size: 1.2rem; margin: 0; }
+  .row {
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    gap: 2em;
+    margin-bottom: 1rem;
+  }
+  .enter-btn {
+    font: inherit;
+    font-size: 0.85rem;
+    color: #2337ff;
+    background: transparent;
+    border: 1px solid #2337ff;
+    padding: 0.35rem 0.85rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  .enter-btn:hover { background-color: #2337ff; color: #000; }
+  .posts {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75em;
+    padding: 0;
+  }
+  li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+</style>
