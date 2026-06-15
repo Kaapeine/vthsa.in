@@ -32,6 +32,13 @@ const tag = parseTagFile(file.text);
     {error && <div class="msg error">{error}</div>}
 
     <p class="hint">Tap the map or drag the pin to adjust the spot.</p>
+    <div class="search-wrap">
+      <div class="search-row">
+        <input id="location-search" type="search" placeholder="Search for a place…" autocomplete="off" />
+        <button type="button" id="search-btn">Go</button>
+      </div>
+      <ul id="search-results" hidden></ul>
+    </div>
     <div id="pick-map"></div>
 
     <form method="POST" action="/admin/api/map" enctype="multipart/form-data">
@@ -116,6 +123,52 @@ const tag = parseTagFile(file.text);
         }
         marker.on('dragend', () => sync(marker.getLatLng()));
         map.on('click', (e) => { marker.setLatLng(e.latlng); sync(e.latlng); });
+
+        const searchInput = document.getElementById('location-search');
+        const searchBtn = document.getElementById('search-btn');
+        const searchResults = document.getElementById('search-results');
+
+        async function doSearch() {
+          const q = searchInput.value.trim();
+          if (!q) return;
+          searchResults.innerHTML = '<li class="loading">Searching…</li>';
+          searchResults.hidden = false;
+          try {
+            const res = await fetch(
+              'https://nominatim.openstreetmap.org/search?format=json&limit=5&q=' + encodeURIComponent(q),
+              { headers: { 'Accept-Language': 'en' } }
+            );
+            const items = await res.json();
+            searchResults.innerHTML = '';
+            if (!items.length) {
+              searchResults.innerHTML = '<li class="no-results">No results</li>';
+              return;
+            }
+            for (const item of items) {
+              const li = document.createElement('li');
+              li.textContent = item.display_name;
+              li.addEventListener('click', () => {
+                const latlng = L.latLng(parseFloat(item.lat), parseFloat(item.lon));
+                map.setView(latlng, 16);
+                marker.setLatLng(latlng);
+                sync(latlng);
+                searchResults.hidden = true;
+                searchInput.value = '';
+              });
+              searchResults.appendChild(li);
+            }
+          } catch {
+            searchResults.innerHTML = '<li class="no-results">Search failed</li>';
+          }
+        }
+
+        searchBtn.addEventListener('click', doSearch);
+        searchInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); doSearch(); }
+        });
+        document.addEventListener('click', (e) => {
+          if (!e.target.closest('.search-wrap')) searchResults.hidden = true;
+        });
       };
       document.head.appendChild(s);
     })();
@@ -150,6 +203,83 @@ const tag = parseTagFile(file.text);
     font-size: 0.78rem;
     color: #888;
     margin: 0;
+  }
+
+  .search-wrap {
+    position: relative;
+    z-index: 2000;
+  }
+
+  .search-row {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  #location-search {
+    flex: 1;
+  }
+
+  #search-btn {
+    font: inherit;
+    font-size: 0.85rem;
+    color: #2337ff;
+    background: transparent;
+    border: 1px solid #2337ff;
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  #search-btn:hover {
+    background-color: #2337ff;
+    color: #000;
+  }
+
+  #search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    list-style: none;
+    margin: 0.25rem 0 0;
+    padding: 0;
+    background: #1b1b1b;
+    border: 1px solid #444;
+    border-radius: 4px;
+    max-height: 12rem;
+    overflow-y: auto;
+  }
+
+  :global(#search-results li) {
+    padding: 0.65rem 0.75rem;
+    font-size: 0.82rem;
+    color: #eee;
+    cursor: pointer;
+    border-bottom: 1px solid #333;
+  }
+
+  :global(#search-results li:last-child) {
+    border-bottom: none;
+  }
+
+  :global(#search-results li:hover) {
+    background: #2337ff;
+    color: #000;
+  }
+
+  :global(#search-results .no-results),
+  :global(#search-results .loading) {
+    color: #888;
+    cursor: default;
+  }
+
+  :global(#search-results .no-results:hover),
+  :global(#search-results .loading:hover) {
+    background: transparent;
+    color: #888;
   }
 
   #pick-map {
