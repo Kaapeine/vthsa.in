@@ -6,6 +6,8 @@ tags:
   - ai
   - writing
 ---
+##### Download the SKILL.md from the GitHub repo [here](https://github.com/Kaapeine/learning-companion-skill).
+
 I've been spending a lot of time working on my audio analysis project. The current iteration of that is shaping up nicely to be a mix comparison tool, but more on that another time. Since the start of the project, I've been having it explain to me every single change it makes. It keeps forgetting to do it though, so I've come up with a short prompt I use every session. "Continue with the plan/task/etc. For every task, make the edits, explain all changes, explain what is verifiable and ask me to check, and only then commit." This does the trick. I still have no idea why it doesn't recall it from its memory though, it is stored as a preference. 
 
 I was working with PostgreSQL and I wanted to understand how it actually works underneath. So, I started asking questions about it inside my project, and that worked really well. It gave me a lot of clean explanations of the exact mechanisms of the write ahead log, MVCC, B-trees, the file storage layer. The best part was how it would always tie it back to the app I'm building. The examples and tradeoffs it gave me were always something directly relevant to what I was doing. So I had this idea that AI could be a really powerful personal tutor, which can guide you through subjects in a way that's exactly suited to your learning preferences. 
@@ -19,7 +21,7 @@ So these were the main problems in trying to make an AI learning companion:
 
 After a whole bunch of brainstorming, I found a clean solution to these problems - a user maintained document of what they're learning.
 
-I've created a SKILL.md for this learning companion tool. This fetches a HTML template I made and the AI bootstraps this document when you first go to it to start learning something. The HTML document is your main reference point for everything. It will contain your notes and this is what you'll keep coming back to as you learn something. The core idea is that the notes in this document isn't AI generated, it's something you write and maintain. AI can add content around your notes, but never touch them. 
+I've created a SKILL.md for this learning companion tool. This fetches a HTML template I made and the AI bootstraps this document when you first go to it to start learning something. The HTML document is your main reference point for everything. It will contain your notes and this is what you'll keep coming back to as you learn something. The core idea is that the notes in this document aren't AI generated, it's something you write and maintain. AI can add content around your notes, but can never touch them. 
 
 Here's how the whole flow works:
 1. Add the skill to the chat and start the conversation. 

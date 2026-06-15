@@ -31,6 +31,7 @@
 }
 
 :root {
+	--font-scale: 0.9;
 	--accent: #2337ff;
 	--accent-dark: #000d8a;
 	--black: 15, 18, 25;
@@ -54,7 +55,7 @@ body {
 	overflow-wrap: break-word;
 	/* color: rgb(var(--gray-dark)); */
 		color: #FFF;
-	font-size: clamp(15px, 2.2vw, 20px);
+	font-size: clamp(calc(15px * var(--font-scale)), calc(2.2vw * var(--font-scale)), calc(20px * var(--font-scale)));
 	line-height: 1.7;
 }
 main {
@@ -91,12 +92,14 @@ b {
 	font-weight: 700;
 }
 a {
-	/* color: var(--accent); */
-		color: #FFF;
+	color: var(--accent);
+	text-decoration: none;
+	transition: text-decoration-color 0.2s ease;
 }
 a:hover {
-	/* color: var(--accent); */
-		color: #FFF;
+	color: var(--accent);
+	text-decoration: underline 2px var(--accent);
+	text-underline-offset: 5px;
 }
 p {
 	margin-bottom: 1em;

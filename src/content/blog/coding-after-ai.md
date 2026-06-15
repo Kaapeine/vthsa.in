@@ -5,6 +5,7 @@ description: Work and creativity in the AI age
 updatedDate: '2026-06-14'
 tags:
   - writing
+  - ai
 ---
 I'm constantly thinking about the future of work, like nearly everyone these days. AI seems like it's capable of a vast amount of white collar work, the kind equivalent to mental manual labour. 
 
