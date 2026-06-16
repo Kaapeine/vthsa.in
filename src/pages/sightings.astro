@@ -23,10 +23,13 @@ const tags = entries.map((e) => ({
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Sightings · {SITE_TITLE}</title>
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-F2JHBLXS0H"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-F2JHBLXS0H"
+    ></script>
     <script is:inline>
       window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
+      function gtag() {
+        dataLayer.push(arguments);
+      }
       gtag('js', new Date());
       gtag('config', 'G-F2JHBLXS0H');
     </script>
@@ -80,7 +83,11 @@ const tags = entries.map((e) => ({
       <div id="legend-list"></div>
     </aside>
 
-    <script id="map-data" type="application/json" set:html={JSON.stringify({ tags, categories })}></script>
+    <script
+      id="map-data"
+      type="application/json"
+      set:html={JSON.stringify({ tags, categories })}
+    />
 
     <script is:inline>
       (function () {
@@ -109,7 +116,7 @@ const tags = entries.map((e) => ({
 
         function initMap() {
           const { tags, categories } = JSON.parse(
-            document.getElementById('map-data').textContent
+            document.getElementById('map-data').textContent,
           );
           const catById = Object.fromEntries(categories.map((c) => [c.id, c]));
 
@@ -167,7 +174,8 @@ const tags = entries.map((e) => ({
           const map = L.map('map');
           L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            attribution:
+              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             referrerPolicy: 'origin',
           }).addTo(map);
 
@@ -177,7 +185,9 @@ const tags = entries.map((e) => ({
 
           const bounds = [];
           for (const t of tags) {
-            const marker = L.marker([t.lat, t.lng], { icon: iconFor(t.category) });
+            const marker = L.marker([t.lat, t.lng], {
+              icon: iconFor(t.category),
+            });
             marker.on('click', () => openModal(t));
             (groups[t.category] || uncategorized).addLayer(marker);
             bounds.push([t.lat, t.lng]);
@@ -258,7 +268,9 @@ const tags = entries.map((e) => ({
           const listModal = document.getElementById('list-modal');
           const listClose = document.getElementById('list-close');
           const tagList = document.getElementById('tag-list');
-          const sortedTags = [...tags].sort((a, b) => b.date.localeCompare(a.date));
+          const sortedTags = [...tags].sort((a, b) =>
+            b.date.localeCompare(a.date),
+          );
           for (const t of sortedTags) {
             const cat = catById[t.category];
             const item = document.createElement('button');
@@ -288,7 +300,9 @@ const tags = entries.map((e) => ({
             listBackdrop.hidden = true;
             listModal.hidden = true;
           }
-          document.getElementById('toggle-list').addEventListener('click', openList);
+          document
+            .getElementById('toggle-list')
+            .addEventListener('click', openList);
           listClose.addEventListener('click', closeList);
           listBackdrop.addEventListener('click', closeList);
 
@@ -423,7 +437,9 @@ const tags = entries.map((e) => ({
   }
   @media (min-width: 768px) {
     #tag-modal,
-    #list-modal { max-width: 740px; }
+    #list-modal {
+      max-width: 740px;
+    }
   }
 
   /* All-sightings list modal */
@@ -491,9 +507,11 @@ const tags = entries.map((e) => ({
   .map-header {
     position: fixed;
     top: 0.6rem;
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(100% - 2rem);
+    right: 1rem;
+    /* Inset the left edge further (3.5rem vs the 1rem right margin) so the bar
+       clears Leaflet's top-left zoom control on mobile. Top/right margins are
+       unchanged; desktop restores a centered 900px bar in the query below. */
+    width: calc(100% - 4.5rem);
     max-width: 900px;
     z-index: 1000;
     height: 3rem;
@@ -505,6 +523,14 @@ const tags = entries.map((e) => ({
     border: 1px solid #222;
     border-radius: 8px;
     box-sizing: border-box;
+  }
+  /* Desktop: re-center as a 900px bar aligned with the side panels. There's
+     ample room from the left edge here, so no zoom-control overlap. */
+  @media (min-width: 918px) {
+    .map-header {
+      right: calc((100vw - 900px) / 2);
+      width: 900px;
+    }
   }
   @media (max-width: 480px) {
     .map-header {
@@ -548,7 +574,9 @@ const tags = entries.map((e) => ({
     border-radius: 4px;
     padding: 0.25rem 0.65rem;
     cursor: pointer;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
   }
   .controls button:hover,
   .controls button.active {
