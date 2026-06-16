@@ -91,20 +91,49 @@ const tags = entries.map((e) => ({
 
     <script is:inline>
       (function () {
-        // Load Leaflet CSS + JS dynamically so init is guaranteed to run after L is defined.
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
-        link.crossOrigin = '';
-        document.head.appendChild(link);
+        // Load Leaflet + markercluster CSS/JS dynamically so init is guaranteed
+        // to run after both are defined (markercluster extends L).
+        function addStylesheet(href, integrity) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = href;
+          if (integrity) {
+            link.integrity = integrity;
+            link.crossOrigin = '';
+          }
+          document.head.appendChild(link);
+        }
+        function addScript(src, onload, integrity) {
+          const el = document.createElement('script');
+          el.src = src;
+          if (integrity) {
+            el.integrity = integrity;
+            el.crossOrigin = '';
+          }
+          el.onload = onload;
+          document.head.appendChild(el);
+        }
 
-        const s = document.createElement('script');
-        s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-        s.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
-        s.crossOrigin = '';
-        s.onload = initMap;
-        document.head.appendChild(s);
+        addStylesheet(
+          'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+          'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY='
+        );
+        // markercluster styles (no SRI pinned — these files have no widely
+        // published hash; loaded over HTTPS from the same pinned version).
+        addStylesheet('https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css');
+        // Default.css carries the spiderfy leg + animation styles. Its default
+        // cluster-circle classes don't apply here (we use a custom .cluster-marker).
+        addStylesheet('https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css');
+
+        addScript(
+          'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+          () =>
+            addScript(
+              'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js',
+              initMap
+            ),
+          'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo='
+        );
 
         function escapeHtml(str) {
           return String(str)
@@ -179,17 +208,32 @@ const tags = entries.map((e) => ({
             referrerPolicy: 'origin',
           }).addTo(map);
 
-          const groups = {};
-          for (const c of categories) groups[c.id] = L.layerGroup().addTo(map);
-          const uncategorized = L.layerGroup().addTo(map);
+          // Cluster nearby markers so close-together tags don't hide each other
+          // when zoomed out. They split apart automatically as you zoom in.
+          const cluster = L.markerClusterGroup({
+            maxClusterRadius: 45,
+            showCoverageOnHover: false,
+            spiderfyOnMaxZoom: true,
+            iconCreateFunction: (c) =>
+              L.divIcon({
+                className: 'cluster-marker',
+                html: `<span>${c.getChildCount()}</span>`,
+                iconSize: [38, 38],
+                iconAnchor: [19, 19],
+              }),
+          });
+          map.addLayer(cluster);
 
+          // Markers grouped by category so the filter can add/remove them.
+          const markersByCat = {};
           const bounds = [];
           for (const t of tags) {
             const marker = L.marker([t.lat, t.lng], {
               icon: iconFor(t.category),
             });
             marker.on('click', () => openModal(t));
-            (groups[t.category] || uncategorized).addLayer(marker);
+            (markersByCat[t.category] ||= []).push(marker);
+            cluster.addLayer(marker);
             bounds.push([t.lat, t.lng]);
           }
 
@@ -209,8 +253,9 @@ const tags = entries.map((e) => ({
             row.innerHTML = `<input type="checkbox" checked /> <span>${c.emoji} ${escapeHtml(c.label)}</span>`;
             const input = row.querySelector('input');
             input.addEventListener('change', () => {
-              if (input.checked) map.addLayer(groups[c.id]);
-              else map.removeLayer(groups[c.id]);
+              const ms = markersByCat[c.id] || [];
+              if (input.checked) cluster.addLayers(ms);
+              else cluster.removeLayers(ms);
             });
             filterList.appendChild(row);
           }
@@ -332,6 +377,22 @@ const tags = entries.map((e) => ({
     height: 2.6rem;
     background: rgba(0, 0, 0, 0.75);
     border: 1.5px solid #2337ff;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  }
+  /* Cluster badge: same circular treatment as a marker, showing the count. */
+  .cluster-marker span {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    background: rgba(0, 0, 0, 0.85);
+    border: 2px solid #2337ff;
     border-radius: 50%;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
   }
