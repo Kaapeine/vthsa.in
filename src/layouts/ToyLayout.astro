@@ -6,14 +6,19 @@ import '../styles/global.css';
 import { SITE_TITLE } from '../consts';
 
 interface Props {
-  /** Name of the toy, shown as the last breadcrumb and the page title. */
-  toyName: string;
+  /** Name of the toy, shown as the last breadcrumb and the page title.
+      Omit on the /toys index, where "Toys" is itself the current crumb. */
+  toyName?: string;
   /** Optional link for the toy crumb; omit to render it as the current page. */
   toyHref?: string;
   description?: string;
+  /** 'center' (default) centers content in the viewport — good for a single
+      focused toy. 'top' aligns content to the top, lined up with the header. */
+  align?: 'center' | 'top';
 }
 
-const { toyName, toyHref, description } = Astro.props;
+const { toyName, toyHref, description, align = 'center' } = Astro.props;
+const pageTitle = toyName ?? 'Toys';
 ---
 
 <!doctype html>
@@ -21,10 +26,23 @@ const { toyName, toyHref, description } = Astro.props;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{toyName} · {SITE_TITLE}</title>
+    <title>{pageTitle} · {SITE_TITLE}</title>
     {description && <meta name="description" content={description} />}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
+    <!-- PWA: installable Toys section (Android Chrome). SW is scoped to /toys. -->
+    <link rel="manifest" href="/toys.webmanifest" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <script is:inline>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/toys-sw.js', { scope: '/toys' })
+            .catch((err) => console.error('SW registration failed:', err));
+        });
+      }
+    </script>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-F2JHBLXS0H"></script>
     <script is:inline>
       window.dataLayer = window.dataLayer || [];
@@ -40,19 +58,25 @@ const { toyName, toyHref, description } = Astro.props;
       <div class="crumbs">
         <a href="/">{SITE_TITLE}</a>
         <span class="sep">/</span>
-        <a href="/toys">Toys</a>
-        <span class="sep">/</span>
         {
-          toyHref ? (
-            <a href={toyHref}>{toyName}</a>
+          toyName ? (
+            <>
+              <a href="/toys">Toys</a>
+              <span class="sep">/</span>
+              {toyHref ? (
+                <a href={toyHref}>{toyName}</a>
+              ) : (
+                <span class="current">{toyName}</span>
+              )}
+            </>
           ) : (
-            <span class="current">{toyName}</span>
+            <span class="current">Toys</span>
           )
         }
       </div>
     </header>
 
-    <main class="toy-main">
+    <main class:list={['toy-main', { top: align === 'top' }]}>
       <slot />
     </main>
   </body>
@@ -121,5 +145,15 @@ const { toyName, toyHref, description } = Astro.props;
     justify-content: center;
     padding: 5rem 1rem 2rem;
     box-sizing: border-box;
+  }
+  /* Top-aligned mode: same centered max-width box and side padding as the
+     header, so content lines up with the header's left edge. */
+  .toy-main.top {
+    align-items: stretch;
+    justify-content: flex-start;
+    width: calc(100% - 2rem);
+    max-width: 900px;
+    margin-inline: auto;
+    padding: 5rem 1.25rem 2rem;
   }
 </style>

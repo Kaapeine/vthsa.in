@@ -1,5 +1,5 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import ToyLayout from '../layouts/ToyLayout.astro';
 import { SITE_DESCRIPTION } from '../consts';
 
 type Toy = {
@@ -15,7 +15,7 @@ const tools: Toy[] = [
 ];
 ---
 
-<BaseLayout title="Toys" description={SITE_DESCRIPTION}>
+<ToyLayout description={SITE_DESCRIPTION} align="top">
   <p class="intro">Little web tools I've built for myself.</p>
 
   {tools.length === 0 ? (
@@ -36,7 +36,7 @@ const tools: Toy[] = [
       ))}
     </ul>
   )}
-</BaseLayout>
+</ToyLayout>
 
 <style>
   .intro {
