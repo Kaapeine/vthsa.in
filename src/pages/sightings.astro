@@ -39,6 +39,7 @@ const tags = entries.map((e) => ({
         <a href="/sightings">Sightings</a>
       </div>
       <div class="controls">
+        <button id="toggle-list" type="button">List</button>
         <button id="toggle-filter" type="button">Filter</button>
         <button id="toggle-legend" type="button">Legend</button>
       </div>
@@ -59,6 +60,14 @@ const tags = entries.map((e) => ({
         </div>
         <p id="modal-notes" hidden></p>
       </div>
+    </div>
+
+    <!-- All-sightings list (same big-modal treatment as the tag detail) -->
+    <div id="list-backdrop" hidden></div>
+    <div id="list-modal" hidden>
+      <button id="list-close" type="button" aria-label="Close">✕</button>
+      <p class="modal-heading">All sightings</p>
+      <div id="tag-list"></div>
     </div>
 
     <aside id="filter-panel" class="panel" hidden>
@@ -131,6 +140,7 @@ const tags = entries.map((e) => ({
               modalImg.hidden = false;
             } else {
               modalImg.hidden = true;
+              modalImg.removeAttribute('src');
             }
             modalTitle.textContent = t.title;
             const cat = catById[t.category];
@@ -204,17 +214,83 @@ const tags = entries.map((e) => ({
             legendList.appendChild(row);
           }
 
-          // Panel toggles — mutually exclusive.
+          // Panel toggles — mutually exclusive. Buttons stay in their active
+          // state while their panel is open.
           const filterPanel = document.getElementById('filter-panel');
           const legendPanel = document.getElementById('legend-panel');
-          document.getElementById('toggle-filter').addEventListener('click', () => {
+          const filterBtn = document.getElementById('toggle-filter');
+          const legendBtn = document.getElementById('toggle-legend');
+          function syncActive() {
+            filterBtn.classList.toggle('active', !filterPanel.hidden);
+            legendBtn.classList.toggle('active', !legendPanel.hidden);
+          }
+          filterBtn.addEventListener('click', () => {
             legendPanel.hidden = true;
             filterPanel.hidden = !filterPanel.hidden;
+            syncActive();
           });
-          document.getElementById('toggle-legend').addEventListener('click', () => {
+          legendBtn.addEventListener('click', () => {
             filterPanel.hidden = true;
             legendPanel.hidden = !legendPanel.hidden;
+            syncActive();
           });
+          // Tapping/clicking outside an open panel (and outside its button)
+          // closes it and clears the active state. The button's own handler
+          // already covers clicks on the button itself.
+          document.addEventListener('click', (e) => {
+            if (filterPanel.hidden && legendPanel.hidden) return;
+            const t = e.target;
+            if (
+              filterPanel.contains(t) ||
+              legendPanel.contains(t) ||
+              filterBtn.contains(t) ||
+              legendBtn.contains(t)
+            )
+              return;
+            filterPanel.hidden = true;
+            legendPanel.hidden = true;
+            syncActive();
+          });
+
+          // All-sightings list — newest first. Clicking an item recenters the
+          // map on that tag and opens its detail modal.
+          const listBackdrop = document.getElementById('list-backdrop');
+          const listModal = document.getElementById('list-modal');
+          const listClose = document.getElementById('list-close');
+          const tagList = document.getElementById('tag-list');
+          const sortedTags = [...tags].sort((a, b) => b.date.localeCompare(a.date));
+          for (const t of sortedTags) {
+            const cat = catById[t.category];
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'tag-list-item';
+            item.innerHTML =
+              `<span class="tag-list-emoji">${cat ? cat.emoji : '📍'}</span>` +
+              `<span class="tag-list-text">` +
+              `<span class="tag-list-title">${escapeHtml(t.title)}</span>` +
+              `<span class="tag-list-date">${t.date}</span>` +
+              `</span>`;
+            item.addEventListener('click', () => {
+              closeList();
+              map.setView([t.lat, t.lng], Math.max(map.getZoom() || 0, 15));
+              openModal(t);
+            });
+            tagList.appendChild(item);
+          }
+          function openList() {
+            filterPanel.hidden = true;
+            legendPanel.hidden = true;
+            syncActive();
+            listBackdrop.hidden = false;
+            listModal.hidden = false;
+          }
+          function closeList() {
+            listBackdrop.hidden = true;
+            listModal.hidden = true;
+          }
+          document.getElementById('toggle-list').addEventListener('click', openList);
+          listClose.addEventListener('click', closeList);
+          listBackdrop.addEventListener('click', closeList);
 
           // Keep panels below the header regardless of its height.
           const header = document.querySelector('.map-header');
@@ -245,17 +321,21 @@ const tags = entries.map((e) => ({
     border-radius: 50%;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
   }
-  #tag-backdrop {
+  #tag-backdrop,
+  #list-backdrop {
     position: fixed;
     inset: 0;
     z-index: 2000;
     background: rgba(0, 0, 0, 0.7);
   }
   #tag-backdrop[hidden],
-  #tag-modal[hidden] {
+  #tag-modal[hidden],
+  #list-backdrop[hidden],
+  #list-modal[hidden] {
     display: none !important;
   }
-  #tag-modal {
+  #tag-modal,
+  #list-modal {
     position: fixed;
     z-index: 2001;
     top: 50%;
@@ -273,7 +353,8 @@ const tags = entries.map((e) => ({
     overflow: hidden;
     font-family: 'Space Mono', monospace;
   }
-  #modal-close {
+  #modal-close,
+  #list-close {
     position: absolute;
     top: 0.6rem;
     right: 0.75rem;
@@ -292,10 +373,19 @@ const tags = entries.map((e) => ({
   }
   #modal-img {
     width: 100%;
-    max-height: 50vh;
-    object-fit: cover;
+    height: auto;
+    max-height: 55vh;
+    /* contain (not cover) so the whole image is visible — scaled down to fit,
+       never cropped — and looks identical on desktop and mobile. */
+    object-fit: contain;
     display: block;
     flex-shrink: 0;
+  }
+  /* An ID selector's `display: block` above out-specifies the UA's
+     `[hidden] { display: none }`, so hiding must be re-asserted here —
+     otherwise a previous tag's image lingers on an image-less tag. */
+  #modal-img[hidden] {
+    display: none;
   }
   #modal-body {
     padding: 1rem 1.25rem 1.5rem;
@@ -332,7 +422,63 @@ const tags = entries.map((e) => ({
     white-space: nowrap;
   }
   @media (min-width: 768px) {
-    #tag-modal { max-width: 740px; }
+    #tag-modal,
+    #list-modal { max-width: 740px; }
+  }
+
+  /* All-sightings list modal */
+  .modal-heading {
+    margin: 0;
+    padding: 1.1rem 1.25rem 0.6rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #666;
+    flex-shrink: 0;
+  }
+  #tag-list {
+    overflow-y: auto;
+    padding: 0 0.5rem 0.75rem;
+  }
+  .tag-list-item {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 0.55rem 0.75rem;
+    cursor: pointer;
+    color: #eee;
+    font: inherit;
+  }
+  .tag-list-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .tag-list-emoji {
+    font-size: 1.25rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .tag-list-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+  .tag-list-title {
+    font-size: 0.85rem;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tag-list-date {
+    font-size: 0.7rem;
+    color: #666;
+    font-variant-numeric: tabular-nums;
   }
 </style>
 
@@ -404,7 +550,8 @@ const tags = entries.map((e) => ({
     cursor: pointer;
     transition: background-color 0.2s ease, color 0.2s ease;
   }
-  .controls button:hover {
+  .controls button:hover,
+  .controls button.active {
     background: var(--accent);
     color: #000;
   }
@@ -436,6 +583,11 @@ const tags = entries.map((e) => ({
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin: 0 0 0.4rem;
+  }
+  #filter-list,
+  #legend-list {
+    display: flex;
+    flex-direction: column;
   }
   .filter-row,
   .legend-row {
