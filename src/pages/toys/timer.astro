@@ -188,12 +188,10 @@ const polar = (min: number, r: number) => {
     height: 100%;
     display: block;
   }
-  #knob-group {
-    transition: transform 0.05s linear;
-  }
-  .dial.animating #arc {
-    transition: stroke-dashoffset 0.3s linear;
-  }
+  /* No transition on the knob: 0 min (0deg) and 60 min (360deg) are the same
+     physical position, so animating between them would spin the pointer a full
+     loop. Drag snaps per-minute and the countdown updates every frame, so
+     neither needs CSS easing. */
   .tick-labels text {
     font-family: 'Space Mono', monospace;
     font-size: 13px;
