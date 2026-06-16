@@ -1,0 +1,588 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const RADIUS = 130; // dial radius used for tick / arc geometry (viewBox units)
+const CENTER = 160; // svg center (viewBox is 320x320)
+const ARC_R = 138; // progress arc radius
+const ARC_CIRC = 2 * Math.PI * ARC_R;
+
+// minute ticks: 0..60. Major ticks every 5 minutes.
+const ticks = Array.from({ length: 61 }, (_, i) => i);
+const labels = [
+  { min: 0, text: '0' },
+  { min: 15, text: '15' },
+  { min: 30, text: '30' },
+  { min: 45, text: '45' },
+];
+const polar = (min: number, r: number) => {
+  // 0 min at top (12 o'clock), clockwise; 60 min == full circle back to top
+  const a = (min / 60) * 2 * Math.PI - Math.PI / 2;
+  return { x: CENTER + r * Math.cos(a), y: CENTER + r * Math.sin(a) };
+};
+---
+
+<BaseLayout title="Timer" description="A skeuomorphic dial timer, up to 60 minutes.">
+  <div class="timer">
+    <div
+      class="dial"
+      id="dial"
+      role="slider"
+      aria-label="Set timer minutes"
+      aria-valuemin="0"
+      aria-valuemax="60"
+      aria-valuenow="0"
+      tabindex="0"
+    >
+      <svg viewBox="0 0 320 320" aria-hidden="true">
+        <defs>
+          <radialGradient id="bezel" cx="50%" cy="38%" r="75%">
+            <stop offset="0%" stop-color="#3a3f4b" />
+            <stop offset="55%" stop-color="#1c1f27" />
+            <stop offset="100%" stop-color="#05060a" />
+          </radialGradient>
+          <radialGradient id="face" cx="50%" cy="38%" r="80%">
+            <stop offset="0%" stop-color="#15171f" />
+            <stop offset="100%" stop-color="#05060a" />
+          </radialGradient>
+          <linearGradient id="knob" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#5b6070" />
+            <stop offset="100%" stop-color="#23262f" />
+          </linearGradient>
+          <filter id="softglow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="b" />
+            <feMerge>
+              <feMergeNode in="b" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        <!-- outer bezel -->
+        <circle cx={CENTER} cy={CENTER} r="158" fill="url(#bezel)" />
+        <circle cx={CENTER} cy={CENTER} r="150" fill="none" stroke="#000" stroke-width="1" opacity="0.6" />
+        <!-- inner recessed face -->
+        <circle cx={CENTER} cy={CENTER} r="146" fill="url(#face)" />
+
+        <!-- minute ticks -->
+        <g stroke-linecap="round">
+          {ticks.map((m) => {
+            const major = m % 5 === 0;
+            const outer = polar(m, RADIUS);
+            const inner = polar(m, major ? RADIUS - 16 : RADIUS - 8);
+            return (
+              <line
+                x1={inner.x}
+                y1={inner.y}
+                x2={outer.x}
+                y2={outer.y}
+                stroke={major ? '#8b93a7' : '#3a4050'}
+                stroke-width={major ? 2.5 : 1.2}
+              />
+            );
+          })}
+        </g>
+
+        <!-- numeric labels -->
+        <g class="tick-labels" fill="#9aa3b8">
+          {labels.map((l) => {
+            const p = polar(l.min, RADIUS - 30);
+            return (
+              <text x={p.x} y={p.y} text-anchor="middle" dominant-baseline="central">
+                {l.text}
+              </text>
+            );
+          })}
+        </g>
+
+        <!-- progress arc track + fill -->
+        <circle
+          cx={CENTER}
+          cy={CENTER}
+          r={ARC_R}
+          fill="none"
+          stroke="#1b1e27"
+          stroke-width="6"
+        />
+        <circle
+          id="arc"
+          cx={CENTER}
+          cy={CENTER}
+          r={ARC_R}
+          fill="none"
+          stroke="var(--accent)"
+          stroke-width="6"
+          stroke-linecap="round"
+          filter="url(#softglow)"
+          stroke-dasharray={ARC_CIRC}
+          stroke-dashoffset={ARC_CIRC}
+          transform={`rotate(-90 ${CENTER} ${CENTER})`}
+        />
+
+        <!-- center hub + pointer knob (rotates) -->
+        <g id="knob-group" transform={`rotate(0 ${CENTER} ${CENTER})`}>
+          <circle cx={CENTER} cy={CENTER} r="82" fill="url(#face)" stroke="#000" stroke-width="1" />
+          <circle cx={CENTER} cy={CENTER} r="82" fill="none" stroke="#2b3040" stroke-width="1" />
+          <!-- pointer triangle at top, tip facing outward -->
+          <polygon
+            points={`${CENTER},${CENTER - 78} ${CENTER - 8},${CENTER - 64} ${CENTER + 8},${CENTER - 64}`}
+            fill="var(--accent)"
+            filter="url(#softglow)"
+          />
+        </g>
+      </svg>
+
+      <!-- segmented display sits over the dial center -->
+      <div class="display" aria-hidden="true">
+        <span class="ghost">88:88</span>
+        <span class="lit" id="readout">00:00</span>
+      </div>
+    </div>
+
+    <p class="time-text" id="status">Drag the dial to set a time</p>
+
+    <div class="controls">
+      <button id="primary" class="btn btn-primary" type="button">Start</button>
+      <button id="reset" class="btn" type="button" hidden>Reset</button>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  @font-face {
+    font-family: 'DSEG7';
+    src: url('/fonts/DSEG7Classic-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-display: swap;
+  }
+
+  .timer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem 0 2rem;
+  }
+
+  .dial {
+    position: relative;
+    width: min(86vw, 374px);
+    aspect-ratio: 1;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.7));
+    outline: none;
+  }
+  .dial:active {
+    cursor: grabbing;
+  }
+  .dial.running {
+    cursor: default;
+  }
+  .dial:focus-visible {
+    filter: drop-shadow(0 0 0 2px var(--accent)) drop-shadow(0 12px 28px rgba(0, 0, 0, 0.7));
+  }
+  .dial svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  #knob-group {
+    transition: transform 0.05s linear;
+  }
+  .dial.animating #arc {
+    transition: stroke-dashoffset 0.3s linear;
+  }
+  .tick-labels text {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+  }
+  .display span {
+    grid-area: 1 / 1;
+    font-family: 'DSEG7', monospace;
+    font-weight: 700;
+    font-size: clamp(1.7rem, 8vw, 2.4rem);
+    letter-spacing: 0.04em;
+  }
+  .ghost {
+    color: rgba(120, 130, 160, 0.12);
+  }
+  .lit {
+    color: var(--accent);
+    text-shadow:
+      0 0 6px rgba(35, 55, 255, 0.9),
+      0 0 16px rgba(35, 55, 255, 0.5);
+  }
+  .display.finished .lit {
+    animation: blink 0.9s steps(1) infinite;
+  }
+  @keyframes blink {
+    50% {
+      opacity: 0.25;
+    }
+  }
+
+  .time-text {
+    margin: 0;
+    color: rgb(var(--gray));
+    font-size: 0.85em;
+    min-height: 1.2em;
+    text-align: center;
+  }
+
+  .controls {
+    display: flex;
+    gap: 0.75rem;
+  }
+  .btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.9em;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    padding: 0.55em 1.4em;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, color 0.15s, opacity 0.15s;
+  }
+  .btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--accent-dark);
+    border-color: var(--accent-dark);
+    color: #fff;
+  }
+</style>
+
+<script>
+  type Phase = 'idle' | 'running' | 'paused' | 'finished';
+
+  function initTimer() {
+    const root = document.querySelector<HTMLElement>('.timer');
+    if (!root) return;
+    // guard against double-init across view transitions
+    if (root.dataset.ready === '1') return;
+    root.dataset.ready = '1';
+
+    const dial = document.getElementById('dial')!;
+    const knob = document.getElementById('knob-group')!;
+    const arc = document.getElementById('arc') as unknown as SVGCircleElement;
+    const readout = document.getElementById('readout')!;
+    const display = document.querySelector<HTMLElement>('.display')!;
+    const statusEl = document.getElementById('status')!;
+    const primaryBtn = document.getElementById('primary') as HTMLButtonElement;
+    const resetBtn = document.getElementById('reset') as HTMLButtonElement;
+
+    const CENTER = 160;
+    const ARC_CIRC = 2 * Math.PI * 138;
+    const MAX_MIN = 60;
+
+    let phase: Phase = 'idle';
+    const DEFAULT_MIN = 5;
+    let setMinutes = DEFAULT_MIN; // chosen duration in whole minutes
+    let lastTickMin = DEFAULT_MIN; // last minute crossed while dragging (for click feedback)
+    let remainingMs = 0; // ms remaining (running/paused)
+    let endTime = 0; // timestamp when running ends
+    let rafId = 0;
+    let alarmTimer = 0;
+
+    // ---- audio (created lazily on first user gesture) ----
+    let audioCtx: AudioContext | null = null;
+    function ensureAudio() {
+      if (!audioCtx) {
+        const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+        if (Ctx) audioCtx = new Ctx();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    // short mechanical click: a quick filtered noise burst
+    function playClick() {
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      const dur = 0.03;
+      const buffer = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        const decay = 1 - i / data.length;
+        data[i] = (Math.random() * 2 - 1) * decay * decay;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 2200;
+      bp.Q.value = 0.8;
+      const gain = ctx.createGain();
+      gain.gain.value = 0.5;
+      src.connect(bp).connect(gain).connect(ctx.destination);
+      src.start();
+    }
+
+    // pleasant two-note chime
+    function playChime() {
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      [880, 1320].forEach((freq, i) => {
+        const t = now + i * 0.18;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.35, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.6);
+      });
+    }
+
+    function vibrate(pattern: number | number[]) {
+      if ('vibrate' in navigator) {
+        try {
+          navigator.vibrate(pattern);
+        } catch {
+          /* best effort */
+        }
+      }
+    }
+
+    // ---- rendering ----
+    function fmt(totalSec: number) {
+      const m = Math.floor(totalSec / 60);
+      const s = Math.floor(totalSec % 60);
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function renderDial(fractionRemaining: number, minutesForKnob: number) {
+      // arc: full at start, shrinks to 0
+      arc.style.strokeDashoffset = String(ARC_CIRC * (1 - fractionRemaining));
+      const deg = (minutesForKnob / MAX_MIN) * 360;
+      knob.setAttribute('transform', `rotate(${deg} ${CENTER} ${CENTER})`);
+    }
+
+    function renderIdle() {
+      readout.textContent = fmt(setMinutes * 60);
+      renderDial(setMinutes / MAX_MIN, setMinutes);
+      dial.setAttribute('aria-valuenow', String(setMinutes));
+      primaryBtn.textContent = 'Start';
+      primaryBtn.disabled = setMinutes === 0;
+      resetBtn.hidden = setMinutes === 0;
+      statusEl.textContent =
+        setMinutes === 0 ? 'Drag the dial to set a time' : 'Ready';
+      dial.classList.remove('running');
+      display.classList.remove('finished');
+    }
+
+    // ---- countdown loop ----
+    function tick() {
+      remainingMs = Math.max(0, endTime - Date.now());
+      const totalMs = setMinutes * 60 * 1000;
+      const sec = Math.ceil(remainingMs / 1000);
+      readout.textContent = fmt(sec);
+      renderDial(totalMs ? remainingMs / totalMs : 0, sec / 60);
+      if (remainingMs <= 0) {
+        finish();
+        return;
+      }
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function startRunning() {
+      endTime = Date.now() + remainingMs;
+      phase = 'running';
+      dial.classList.add('running');
+      dial.classList.remove('animating');
+      primaryBtn.textContent = 'Pause';
+      primaryBtn.disabled = false;
+      resetBtn.hidden = false;
+      statusEl.textContent = 'Running';
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function pause() {
+      remainingMs = Math.max(0, endTime - Date.now());
+      phase = 'paused';
+      cancelAnimationFrame(rafId);
+      primaryBtn.textContent = 'Resume';
+      statusEl.textContent = 'Paused';
+    }
+
+    function finish() {
+      cancelAnimationFrame(rafId);
+      phase = 'finished';
+      readout.textContent = '00:00';
+      renderDial(0, 0);
+      display.classList.add('finished');
+      statusEl.textContent = "Time's up";
+      primaryBtn.textContent = 'Dismiss';
+      primaryBtn.disabled = false;
+      resetBtn.hidden = true;
+      // repeating alarm until dismissed
+      const ring = () => {
+        playChime();
+        vibrate([200, 100, 200]);
+      };
+      ring();
+      alarmTimer = window.setInterval(ring, 2000);
+    }
+
+    function stopAlarm() {
+      if (alarmTimer) {
+        clearInterval(alarmTimer);
+        alarmTimer = 0;
+      }
+      vibrate(0);
+    }
+
+    function reset() {
+      stopAlarm();
+      cancelAnimationFrame(rafId);
+      phase = 'idle';
+      remainingMs = 0;
+      setMinutes = DEFAULT_MIN;
+      lastTickMin = DEFAULT_MIN;
+      renderIdle();
+    }
+
+    // ---- dial dragging ----
+    function angleToMinutes(clientX: number, clientY: number) {
+      const rect = dial.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      let a = Math.atan2(clientY - cy, clientX - cx) + Math.PI / 2; // 0 at top
+      if (a < 0) a += 2 * Math.PI;
+      const min = Math.round((a / (2 * Math.PI)) * MAX_MIN);
+      return Math.min(MAX_MIN, Math.max(0, min));
+    }
+
+    let dragging = false;
+    function onPointerDown(e: PointerEvent) {
+      if (phase === 'running' || phase === 'paused' || phase === 'finished') return;
+      dragging = true;
+      dial.setPointerCapture(e.pointerId);
+      ensureAudio();
+      applyDrag(e.clientX, e.clientY);
+    }
+    function applyDrag(x: number, y: number) {
+      const min = angleToMinutes(x, y);
+      if (min !== setMinutes) {
+        // click + haptic for each minute tick crossed
+        if (min !== lastTickMin) {
+          playClick();
+          vibrate(10);
+          lastTickMin = min;
+        }
+        setMinutes = min;
+        renderIdle();
+      }
+    }
+    function onPointerMove(e: PointerEvent) {
+      if (!dragging) return;
+      applyDrag(e.clientX, e.clientY);
+    }
+    function onPointerUp(e: PointerEvent) {
+      if (!dragging) return;
+      dragging = false;
+      try {
+        dial.releasePointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+    }
+
+    // keyboard support for the slider role
+    function onKey(e: KeyboardEvent) {
+      if (phase !== 'idle') return;
+      let next = setMinutes;
+      if (e.key === 'ArrowUp' || e.key === 'ArrowRight') next = Math.min(MAX_MIN, setMinutes + 1);
+      else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') next = Math.max(0, setMinutes - 1);
+      else return;
+      e.preventDefault();
+      if (next !== setMinutes) {
+        setMinutes = next;
+        lastTickMin = next;
+        ensureAudio();
+        playClick();
+        vibrate(10);
+        renderIdle();
+      }
+    }
+
+    dial.addEventListener('pointerdown', onPointerDown);
+    dial.addEventListener('pointermove', onPointerMove);
+    dial.addEventListener('pointerup', onPointerUp);
+    dial.addEventListener('pointercancel', onPointerUp);
+    dial.addEventListener('keydown', onKey);
+
+    // ---- control buttons ----
+    primaryBtn.addEventListener('click', () => {
+      ensureAudio();
+      if (phase === 'idle') {
+        if (setMinutes === 0) return;
+        remainingMs = setMinutes * 60 * 1000;
+        playClick();
+        vibrate(10);
+        startRunning();
+      } else if (phase === 'running') {
+        pause();
+      } else if (phase === 'paused') {
+        startRunning();
+      } else if (phase === 'finished') {
+        reset();
+      }
+    });
+
+    resetBtn.addEventListener('click', () => {
+      ensureAudio();
+      playClick();
+      reset();
+    });
+
+    // ---- cleanup on navigation (Astro view transitions) ----
+    function cleanup() {
+      stopAlarm();
+      cancelAnimationFrame(rafId);
+      if (audioCtx) {
+        audioCtx.close().catch(() => {});
+        audioCtx = null;
+      }
+      root!.dataset.ready = '';
+    }
+    document.addEventListener('astro:before-swap', cleanup, { once: true });
+    window.addEventListener('pagehide', cleanup, { once: true });
+
+    renderIdle();
+  }
+
+  document.addEventListener('astro:page-load', initTimer);
+</script>

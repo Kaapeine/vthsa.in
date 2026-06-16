@@ -1,0 +1,81 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SITE_DESCRIPTION } from '../consts';
+
+type Toy = {
+  title: string;
+  description: string;
+  url: string;
+  external?: boolean;
+};
+
+// Little web tools I've built for myself. Add a line here for each new toy.
+const tools: Toy[] = [
+  { title: 'Timer', description: 'A skeuomorphic dial timer', url: '/toys/timer' },
+];
+---
+
+<BaseLayout title="Toys" description={SITE_DESCRIPTION}>
+  <p class="intro">Little web tools I've built for myself.</p>
+
+  {tools.length === 0 ? (
+    <p class="empty">No toys yet — check back soon.</p>
+  ) : (
+    <ul id="toys-list">
+      {tools.map((toy) => (
+        <li class="plain-link">
+          <a
+            href={toy.url}
+            class="plain-title"
+            {...(toy.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+          >
+            {toy.title}
+          </a>
+          <p class="plain-desc">{toy.description}</p>
+        </li>
+      ))}
+    </ul>
+  )}
+</BaseLayout>
+
+<style>
+  .intro {
+    color: rgb(var(--gray));
+    margin-bottom: 1.5rem;
+  }
+  .empty {
+    color: rgb(var(--gray));
+    font-style: italic;
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .plain-link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.1rem 0;
+  }
+  .plain-title {
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.95em;
+  }
+  .plain-title:hover {
+    text-decoration: underline 2px var(--accent);
+    text-underline-offset: 4px;
+  }
+  .plain-desc {
+    margin: 0;
+    font-size: 0.78em;
+    color: rgb(var(--gray));
+    line-height: 1.4;
+  }
+</style>
