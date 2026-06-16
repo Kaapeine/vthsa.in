@@ -1,5 +1,5 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToyLayout from '../../layouts/ToyLayout.astro';
 
 const RADIUS = 130; // dial radius used for tick / arc geometry (viewBox units)
 const CENTER = 160; // svg center (viewBox is 320x320)
@@ -21,7 +21,7 @@ const polar = (min: number, r: number) => {
 };
 ---
 
-<BaseLayout title="Timer" description="A skeuomorphic dial timer, up to 60 minutes.">
+<ToyLayout toyName="Timer" toyHref="/toys/timer" description="A skeuomorphic dial timer, up to 60 minutes.">
   <div class="timer">
     <div
       class="dial"
@@ -145,7 +145,7 @@ const polar = (min: number, r: number) => {
       <button id="reset" class="btn" type="button" hidden>Reset</button>
     </div>
   </div>
-</BaseLayout>
+</ToyLayout>
 
 <style>
   @font-face {
@@ -584,5 +584,12 @@ const polar = (min: number, r: number) => {
     renderIdle();
   }
 
+  // ToyLayout has no ClientRouter, so init on normal load; keep the
+  // view-transition hook too in case a toy page ever opts into it.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTimer);
+  } else {
+    initTimer();
+  }
   document.addEventListener('astro:page-load', initTimer);
 </script>

@@ -1,0 +1,125 @@
+---
+// Reusable shell for Toys pages: plain black background, content centered,
+// and a sightings-style breadcrumb header (Flow Field / Toys / {toy}) with an
+// accent border. No site chrome (no main Header, no hero particle field).
+import '../styles/global.css';
+import { SITE_TITLE } from '../consts';
+
+interface Props {
+  /** Name of the toy, shown as the last breadcrumb and the page title. */
+  toyName: string;
+  /** Optional link for the toy crumb; omit to render it as the current page. */
+  toyHref?: string;
+  description?: string;
+}
+
+const { toyName, toyHref, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{toyName} · {SITE_TITLE}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-F2JHBLXS0H"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+      gtag('config', 'G-F2JHBLXS0H');
+    </script>
+  </head>
+  <body>
+    <header class="toy-header">
+      <div class="crumbs">
+        <a href="/">{SITE_TITLE}</a>
+        <span class="sep">/</span>
+        <a href="/toys">Toys</a>
+        <span class="sep">/</span>
+        {
+          toyHref ? (
+            <a href={toyHref}>{toyName}</a>
+          ) : (
+            <span class="current">{toyName}</span>
+          )
+        }
+      </div>
+    </header>
+
+    <main class="toy-main">
+      <slot />
+    </main>
+  </body>
+</html>
+
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    background: #000;
+    min-height: 100vh;
+  }
+
+  .toy-header {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 2rem);
+    max-width: 900px;
+    z-index: 1000;
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    padding: 0 1.25rem;
+    background: rgba(0, 0, 0, 0.92);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    box-sizing: border-box;
+  }
+  @media (max-width: 480px) {
+    .toy-header {
+      height: auto;
+      padding: 0.6rem 1rem;
+    }
+  }
+
+  .crumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+  }
+  .crumbs a {
+    color: #fff;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  .crumbs a:hover {
+    color: var(--accent);
+  }
+  .crumbs .current {
+    color: var(--accent);
+  }
+  .sep {
+    color: #444;
+  }
+
+  .toy-main {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 5rem 1rem 2rem;
+    box-sizing: border-box;
+  }
+</style>
