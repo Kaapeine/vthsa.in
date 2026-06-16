@@ -13,8 +13,9 @@ interface Props {
   toyHref?: string;
   description?: string;
   /** 'center' (default) centers content in the viewport — good for a single
-      focused toy. 'top' aligns content to the top, lined up with the header. */
-  align?: 'center' | 'top';
+      focused toy. 'top' aligns content to the top, lined up with the header.
+      'fill' centers but trims padding so content can use the full height. */
+  align?: 'center' | 'top' | 'fill';
 }
 
 const { toyName, toyHref, description, align = 'center' } = Astro.props;
@@ -74,9 +75,12 @@ const pageTitle = toyName ?? 'Toys';
           )
         }
       </div>
+      <div class="header-actions">
+        <slot name="header-actions" />
+      </div>
     </header>
 
-    <main class:list={['toy-main', { top: align === 'top' }]}>
+    <main class:list={['toy-main', { top: align === 'top', fill: align === 'fill' }]}>
       <slot />
     </main>
   </body>
@@ -101,6 +105,8 @@ const pageTitle = toyName ?? 'Toys';
     height: 3rem;
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
     padding: 0 1.25rem;
     background: rgba(0, 0, 0, 0.92);
     border: 1px solid var(--accent);
@@ -136,6 +142,11 @@ const pageTitle = toyName ?? 'Toys';
   .sep {
     color: #444;
   }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
 
   .toy-main {
     min-height: 100vh;
@@ -155,5 +166,10 @@ const pageTitle = toyName ?? 'Toys';
     max-width: 900px;
     margin-inline: auto;
     padding: 5rem 1.25rem 2rem;
+  }
+  /* Fill mode: trim padding to just header clearance so content can use the
+     full available height. */
+  .toy-main.fill {
+    padding: 4.75rem 0.75rem 0.75rem;
   }
 </style>

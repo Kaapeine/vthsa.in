@@ -1,0 +1,645 @@
+---
+import ToyLayout from '../../layouts/ToyLayout.astro';
+
+// --- geometry (SVG viewBox is 300 x 480) ---
+const PIVOT_X = 150;
+const PIVOT_Y = 430; // hidden behind the base panel
+const SCALE_TOP_Y = 60; // weight position for the slowest tempo
+const SCALE_BOT_Y = 335; // weight position for the fastest tempo
+const BPM_MIN = 40;
+const BPM_MAX = 208;
+
+const yForBpm = (bpm: number) =>
+  SCALE_TOP_Y +
+  ((bpm - BPM_MIN) / (BPM_MAX - BPM_MIN)) * (SCALE_BOT_Y - SCALE_TOP_Y);
+
+// Body trapezium edges, so ticks/panel can follow the taper.
+const BODY_TOP_Y = 30;
+const BODY_BOT_Y = 440;
+const edgeX = (y: number, side: -1 | 1) => {
+  const topHalf = 52;
+  const botHalf = 116;
+  const t = (y - BODY_TOP_Y) / (BODY_BOT_Y - BODY_TOP_Y);
+  const half = topHalf + (botHalf - topHalf) * t;
+  return PIVOT_X + side * half;
+};
+
+// The classic Maelzel scale: steps widen toward the fast (bottom) end, so the
+// markers bunch up toward the slow (top) end. Built top-value-down.
+const scaleBpms: number[] = [208];
+let _v = 208;
+while (_v > 144) { _v -= 8; scaleBpms.push(_v); } // 200..144 by 8
+while (_v > 120) { _v -= 6; scaleBpms.push(_v); } // 138..120 by 6
+while (_v > 72) { _v -= 4; scaleBpms.push(_v); } //  116..72 by 4
+while (_v > 60) { _v -= 3; scaleBpms.push(_v); } //   69..60 by 3
+while (_v > 40) { _v -= 2; scaleBpms.push(_v); } //   58..40 by 2
+// Alternate sides: 208 left, 200 right, 192 left, …
+const marks = scaleBpms.map((bpm, i) => ({
+  bpm,
+  side: (i % 2 === 0 ? -1 : 1) as -1 | 1,
+}));
+
+// Italian tempo zones, anchored at a representative bpm
+const zones = [
+  { name: 'Largo', bpm: 50 },
+  { name: 'Adagio', bpm: 70 },
+  { name: 'Andante', bpm: 92 },
+  { name: 'Moderato', bpm: 114 },
+  { name: 'Allegro', bpm: 150 },
+  { name: 'Presto', bpm: 188 },
+];
+
+// base panel trapezoid (hides the pivot + lower rod)
+const PANEL_TOP_Y = 345;
+const panelPts = [
+  [edgeX(PANEL_TOP_Y, -1), PANEL_TOP_Y],
+  [edgeX(PANEL_TOP_Y, 1), PANEL_TOP_Y],
+  [edgeX(BODY_BOT_Y, 1), BODY_BOT_Y],
+  [edgeX(BODY_BOT_Y, -1), BODY_BOT_Y],
+]
+  .map((p) => p.join(','))
+  .join(' ');
+
+const bodyPts = [
+  [edgeX(BODY_TOP_Y, -1), BODY_TOP_Y],
+  [edgeX(BODY_TOP_Y, 1), BODY_TOP_Y],
+  [edgeX(BODY_BOT_Y, 1), BODY_BOT_Y],
+  [edgeX(BODY_BOT_Y, -1), BODY_BOT_Y],
+]
+  .map((p) => p.join(','))
+  .join(' ');
+
+// little pyramid cap on top, slightly overhanging the body
+const capPts = [
+  [edgeX(BODY_TOP_Y, -1) - 5, BODY_TOP_Y],
+  [edgeX(BODY_TOP_Y, 1) + 5, BODY_TOP_Y],
+  [PIVOT_X, 6],
+]
+  .map((p) => p.join(','))
+  .join(' ');
+---
+
+<ToyLayout
+  toyName="Metronome"
+  toyHref="/toys/metronome"
+  description="An analog-style pendulum metronome, 40–208 BPM."
+  align="fill"
+>
+  <label class="vib" slot="header-actions">
+    <input type="checkbox" id="vib" />
+    <span>Vibrate</span>
+  </label>
+
+  <div class="metronome" id="metronome">
+    <div
+      class="device"
+      id="device"
+      role="slider"
+      aria-label="Set tempo in beats per minute"
+      aria-valuemin={BPM_MIN}
+      aria-valuemax={BPM_MAX}
+      aria-valuenow="120"
+      tabindex="0"
+    >
+      <svg viewBox="0 0 300 480" aria-hidden="true">
+        <defs>
+          <linearGradient id="body" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#1a1d25" />
+            <stop offset="45%" stop-color="#2a2e39" />
+            <stop offset="55%" stop-color="#2a2e39" />
+            <stop offset="100%" stop-color="#11131a" />
+          </linearGradient>
+          <linearGradient id="panel" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#15181f" />
+            <stop offset="50%" stop-color="#23262f" />
+            <stop offset="100%" stop-color="#0c0e13" />
+          </linearGradient>
+          <linearGradient id="rod" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#7d869c" />
+            <stop offset="50%" stop-color="#cfd6e6" />
+            <stop offset="100%" stop-color="#6a7488" />
+          </linearGradient>
+          <linearGradient id="bob" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#aeb6c8" />
+            <stop offset="100%" stop-color="#5b647a" />
+          </linearGradient>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2.5" result="b" />
+            <feMerge>
+              <feMergeNode in="b" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        <!-- body -->
+        <polygon points={bodyPts} fill="url(#body)" stroke="#000" stroke-width="1" />
+        <!-- little pyramid cap -->
+        <polygon points={capPts} fill="url(#body)" stroke="#000" stroke-width="1" />
+
+        <!-- recessed central slot -->
+        <rect x="123" y="48" width="54" height="295" rx="6" fill="#05060a" />
+        <rect x="123" y="48" width="54" height="295" rx="6" fill="none" stroke="#000" stroke-width="1" />
+
+        <!-- tempo numbers, alternating left/right of the slot -->
+        <g class="ticks">
+          {
+            marks.map((m) => {
+              const y = yForBpm(m.bpm);
+              return m.side === -1 ? (
+                <g>
+                  <line x1={109} y1={y} x2={123} y2={y} stroke="#7a8298" stroke-width="1" />
+                  <text class="num" x={106} y={y} text-anchor="end" dominant-baseline="central">
+                    {m.bpm}
+                  </text>
+                </g>
+              ) : (
+                <g>
+                  <line x1={177} y1={y} x2={191} y2={y} stroke="#7a8298" stroke-width="1" />
+                  <text class="num" x={194} y={y} text-anchor="start" dominant-baseline="central">
+                    {m.bpm}
+                  </text>
+                </g>
+              );
+            })
+          }
+        </g>
+
+        <!-- italian tempo names down the black center -->
+        <g class="zone-labels">
+          {
+            zones.map((z) => (
+              <text x={150} y={yForBpm(z.bpm)} text-anchor="middle" dominant-baseline="central">
+                {z.name}
+              </text>
+            ))
+          }
+        </g>
+
+        <!-- pendulum: rod + weight, rotates around the (hidden) pivot -->
+        <g id="rodgroup">
+          <rect x="147.5" y="40" width="5" height="392" rx="2.5" fill="url(#rod)" />
+          <circle cx="150" cy="42" r="6" fill="url(#rod)" stroke="#2b3040" stroke-width="0.5" />
+          <g id="weight">
+            <polygon
+              points="-22,-13 22,-13 17,13 -17,13"
+              fill="url(#bob)"
+              stroke="#3a4050"
+              stroke-width="1"
+            />
+            <rect x="-3" y="-13" width="6" height="26" fill="#05060a" opacity="0.55" />
+          </g>
+        </g>
+
+        <!-- base panel ON TOP, hiding the pivot + lower rod -->
+        <polygon points={panelPts} fill="url(#panel)" stroke="#000" stroke-width="1" />
+      </svg>
+
+      <!-- BPM + controls live in the metronome's bottom panel -->
+      <div class="panel-ui">
+        <div class="readout">
+          <span class="bpm" id="bpm">120</span>
+          <span class="bpm-unit">BPM</span>
+        </div>
+        <span class="zone" id="zone">Allegro</span>
+        <div class="controls">
+          <button id="toggle" class="btn btn-primary" type="button">Start</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</ToyLayout>
+
+<style>
+  .metronome {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .device {
+    /* Sized by the available height, capped at the container width, so it fills
+       the page vertically on wide screens and never distorts (aspect-ratio +
+       a single definite dimension). */
+    width: min(100%, calc((100vh - 5.5rem) * 300 / 480));
+    aspect-ratio: 300 / 480;
+    container-type: size;
+    position: relative;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    outline: none;
+    filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.6));
+  }
+  .device:active {
+    cursor: grabbing;
+  }
+  .device:focus-visible {
+    filter: drop-shadow(0 0 0 2px var(--accent)) drop-shadow(0 16px 32px rgba(0, 0, 0, 0.6));
+  }
+  .device svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  /* No transition on the rod — it's driven frame-by-frame while running. */
+  #rodgroup {
+    transform-box: view-box;
+  }
+  .ticks .num {
+    font-family: 'Space Mono', monospace;
+    font-size: 6.5px;
+    fill: #9aa3b8;
+  }
+  .zone-labels text {
+    font-family: 'Space Mono', monospace;
+    font-size: 6.5px;
+    font-style: italic;
+    fill: #aab2c6;
+    letter-spacing: 0.02em;
+  }
+
+  /* The BPM + controls sit over the base panel of the device. Sizes use
+     container units (cqw = 1% of device width) so they scale with the
+     metronome at any height. */
+  .panel-ui {
+    position: absolute;
+    left: 50%;
+    top: 72%;
+    transform: translateX(-50%);
+    width: 62%;
+    height: 19%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6cqw;
+  }
+  .readout {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 1.4cqw;
+  }
+  .bpm {
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 9cqw;
+    color: var(--accent);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 2cqw rgba(35, 55, 255, 0.5);
+  }
+  .bpm-unit {
+    font-size: 3.4cqw;
+    color: rgb(var(--gray));
+    letter-spacing: 0.06em;
+  }
+  .zone {
+    font-style: italic;
+    color: #fff;
+    font-size: 3.4cqw;
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 4cqw;
+  }
+  .btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 4cqw;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #fff;
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    padding: 1.6cqw 6cqw;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .btn:hover {
+    background: var(--accent-dark);
+    border-color: var(--accent-dark);
+  }
+  /* Vibrate toggle lives in the ToyLayout header (no container context there,
+     so use fixed rem sizing rather than container units). */
+  .vib {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: rgb(var(--gray));
+    cursor: pointer;
+    user-select: none;
+  }
+  .vib input {
+    accent-color: var(--accent);
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+  }
+</style>
+
+<script>
+  function initMetronome() {
+    const root = document.getElementById('metronome');
+    if (!root || root.dataset.ready === '1') return;
+    root.dataset.ready = '1';
+
+    const device = document.getElementById('device')!;
+    const rodgroup = document.getElementById('rodgroup')!;
+    const weight = document.getElementById('weight')!;
+    const bpmEl = document.getElementById('bpm')!;
+    const zoneEl = document.getElementById('zone')!;
+    const toggleBtn = document.getElementById('toggle') as HTMLButtonElement;
+    const vibChk = document.getElementById('vib') as HTMLInputElement;
+
+    const PIVOT_X = 150;
+    const PIVOT_Y = 430;
+    const SCALE_TOP_Y = 60;
+    const SCALE_BOT_Y = 335;
+    const BPM_MIN = 40;
+    const BPM_MAX = 208;
+    const MAX_ANGLE = 6; // degrees of swing each side
+
+    const yForBpm = (bpm: number) =>
+      SCALE_TOP_Y +
+      ((bpm - BPM_MIN) / (BPM_MAX - BPM_MIN)) * (SCALE_BOT_Y - SCALE_TOP_Y);
+    const bpmForY = (y: number) => {
+      const clamped = Math.max(SCALE_TOP_Y, Math.min(SCALE_BOT_Y, y));
+      const f = (clamped - SCALE_TOP_Y) / (SCALE_BOT_Y - SCALE_TOP_Y);
+      return Math.round(BPM_MIN + f * (BPM_MAX - BPM_MIN));
+    };
+
+    function zoneFor(bpm: number) {
+      if (bpm < 60) return 'Largo';
+      if (bpm < 66) return 'Larghetto';
+      if (bpm < 76) return 'Adagio';
+      if (bpm < 108) return 'Andante';
+      if (bpm < 120) return 'Moderato';
+      if (bpm < 168) return 'Allegro';
+      if (bpm < 200) return 'Presto';
+      return 'Prestissimo';
+    }
+
+    let bpm = 120;
+    let running = false;
+    let startAudioTime = 0; // audio-clock time of beat 0 (a swing extreme)
+    let nextNoteTime = 0; // audio-clock time of the next beat to schedule
+    let rafId = 0;
+    let schedulerId = 0;
+    const LOOKAHEAD = 0.1; // schedule beats up to 100ms ahead (s)
+    const SCHED_INTERVAL = 25; // scheduler pass cadence (ms)
+
+    // ---- audio ----
+    let audioCtx: AudioContext | null = null;
+    let clickBuffer: AudioBuffer | null = null;
+    function ensureAudio() {
+      if (!audioCtx) {
+        const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+        if (Ctx) {
+          audioCtx = new Ctx();
+          clickBuffer = makeNoiseBuffer(audioCtx, 0.02);
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    // one fixed noise burst, reused for every tick so the transient is identical
+    function makeNoiseBuffer(ctx: AudioContext, dur: number) {
+      const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) {
+        const k = 1 - i / d.length;
+        d[i] = (Math.random() * 2 - 1) * k * k;
+      }
+      return buf;
+    }
+
+    // a short woody "tok", scheduled at a precise audio-clock time
+    function playTick(when: number) {
+      const ctx = audioCtx;
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(820, when);
+      osc.frequency.exponentialRampToValueAtTime(280, when + 0.04);
+      g.gain.setValueAtTime(0.0001, when);
+      g.gain.exponentialRampToValueAtTime(0.6, when + 0.002);
+      g.gain.exponentialRampToValueAtTime(0.0001, when + 0.08);
+      osc.connect(g).connect(ctx.destination);
+      osc.start(when);
+      osc.stop(when + 0.09);
+      if (clickBuffer) {
+        const src = ctx.createBufferSource();
+        src.buffer = clickBuffer;
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = 2600;
+        const ng = ctx.createGain();
+        ng.gain.value = 0.35;
+        src.connect(bp).connect(ng).connect(ctx.destination);
+        src.start(when);
+      }
+    }
+
+    // short click for when the weight hits a travel limit
+    function playClick() {
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const dur = 0.025;
+      const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) {
+        const k = 1 - i / d.length;
+        d[i] = (Math.random() * 2 - 1) * k * k;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 1800;
+      bp.Q.value = 0.7;
+      const g = ctx.createGain();
+      g.gain.value = 0.4;
+      src.connect(bp).connect(g).connect(ctx.destination);
+      src.start(now);
+    }
+
+    function vibrate(ms: number) {
+      if (vibChk.checked && 'vibrate' in navigator) {
+        try {
+          navigator.vibrate(ms);
+        } catch {
+          /* best effort */
+        }
+      }
+    }
+
+    // ---- rendering ----
+    function setRodAngle(deg: number) {
+      rodgroup.setAttribute('transform', `rotate(${deg} ${PIVOT_X} ${PIVOT_Y})`);
+    }
+    function renderWeight() {
+      weight.setAttribute('transform', `translate(${PIVOT_X} ${yForBpm(bpm)})`);
+    }
+    function renderReadout() {
+      bpmEl.textContent = String(bpm);
+      zoneEl.textContent = zoneFor(bpm);
+      device.setAttribute('aria-valuenow', String(bpm));
+    }
+    function renderAll() {
+      renderWeight();
+      renderReadout();
+    }
+
+    // ---- run loop ----
+    // A lookahead scheduler drives the beat on the precise audio clock, while
+    // requestAnimationFrame only animates the pendulum. Decoupling them keeps
+    // both the timing and the tick's timbre rock-steady regardless of frame
+    // rate or main-thread jitter. (Pattern: "A Tale of Two Clocks".)
+    function scheduler() {
+      const ctx = audioCtx;
+      if (!ctx) return;
+      const beatSec = 60 / bpm;
+      while (nextNoteTime < ctx.currentTime + LOOKAHEAD) {
+        playTick(nextNoteTime);
+        // Haptics can't be scheduled on the audio clock, so fire them near the
+        // beat with a timeout — they don't need sample accuracy.
+        const delayMs = (nextNoteTime - ctx.currentTime) * 1000;
+        setTimeout(() => vibrate(15), Math.max(0, delayMs));
+        nextNoteTime += beatSec;
+      }
+    }
+
+    function animate() {
+      const ctx = audioCtx;
+      if (ctx) {
+        const beatSec = 60 / bpm;
+        const phase = (ctx.currentTime - startAudioTime) / beatSec;
+        setRodAngle(MAX_ANGLE * Math.cos(Math.PI * phase));
+      }
+      rafId = requestAnimationFrame(animate);
+    }
+
+    function start() {
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      running = true;
+      // first beat a hair in the future so it schedules cleanly
+      startAudioTime = ctx.currentTime + 0.06;
+      nextNoteTime = startAudioTime;
+      toggleBtn.textContent = 'Stop';
+      clearInterval(schedulerId);
+      schedulerId = window.setInterval(scheduler, SCHED_INTERVAL);
+      scheduler();
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(animate);
+    }
+    function stop() {
+      running = false;
+      clearInterval(schedulerId);
+      schedulerId = 0;
+      cancelAnimationFrame(rafId);
+      setRodAngle(0);
+      toggleBtn.textContent = 'Start';
+    }
+
+    // Adjust tempo live: rebase the beat clock so the pulse continues cleanly.
+    function setBpm(next: number) {
+      const clamped = Math.max(BPM_MIN, Math.min(BPM_MAX, next));
+      if (clamped === bpm) return;
+      const atEnd = clamped === BPM_MIN || clamped === BPM_MAX;
+      bpm = clamped;
+      renderAll();
+      // tactile feedback when the weight reaches either travel limit
+      if (atEnd) {
+        playClick();
+        vibrate(20);
+      }
+      if (running && audioCtx) {
+        startAudioTime = audioCtx.currentTime + 0.06;
+        nextNoteTime = startAudioTime;
+      }
+    }
+
+    // ---- drag to set tempo (pointer Y -> bpm via the fixed scale) ----
+    function pointerToBpm(clientY: number) {
+      const rect = device.getBoundingClientRect();
+      const svgY = ((clientY - rect.top) / rect.height) * 480;
+      return bpmForY(svgY);
+    }
+    let dragging = false;
+    device.addEventListener('pointerdown', (e) => {
+      // don't start a tempo drag when interacting with the panel controls
+      if ((e.target as HTMLElement).closest('.panel-ui')) return;
+      dragging = true;
+      device.setPointerCapture(e.pointerId);
+      setBpm(pointerToBpm(e.clientY));
+    });
+    device.addEventListener('pointermove', (e) => {
+      if (dragging) setBpm(pointerToBpm(e.clientY));
+    });
+    function endDrag(e: PointerEvent) {
+      if (!dragging) return;
+      dragging = false;
+      try {
+        device.releasePointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+    }
+    device.addEventListener('pointerup', endDrag);
+    device.addEventListener('pointercancel', endDrag);
+
+    device.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+        setBpm(bpm + 1); // up = faster on the readout, regardless of weight dir
+        e.preventDefault();
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+        setBpm(bpm - 1);
+        e.preventDefault();
+      }
+    });
+
+    toggleBtn.addEventListener('click', () => (running ? stop() : start()));
+
+    // ---- cleanup on navigation ----
+    function cleanup() {
+      cancelAnimationFrame(rafId);
+      clearInterval(schedulerId);
+      if ('vibrate' in navigator) {
+        try {
+          navigator.vibrate(0);
+        } catch {
+          /* ignore */
+        }
+      }
+      if (audioCtx) {
+        audioCtx.close().catch(() => {});
+        audioCtx = null;
+      }
+      root!.dataset.ready = '';
+    }
+    document.addEventListener('astro:before-swap', cleanup, { once: true });
+    window.addEventListener('pagehide', cleanup, { once: true });
+
+    renderAll();
+    setRodAngle(0);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMetronome);
+  } else {
+    initMetronome();
+  }
+  document.addEventListener('astro:page-load', initMetronome);
+</script>

@@ -11,31 +11,46 @@ type Toy = {
 
 // Little web tools I've built for myself. Add a line here for each new toy.
 const tools: Toy[] = [
-  { title: 'Timer', description: 'A skeuomorphic dial timer', url: '/toys/timer' },
+  {
+    title: 'Timer',
+    description: 'A skeuomorphic dial timer',
+    url: '/toys/timer',
+  },
+  {
+    title: 'Metronome',
+    description: 'An analog-style pendulum metronome',
+    url: '/toys/metronome',
+  },
 ];
 ---
 
 <ToyLayout description={SITE_DESCRIPTION} align="top">
-  <p class="intro">Little web tools I've built for myself.</p>
+  <p class="intro">
+    Little web tools I've built for myself. This page can be installed as a PWA.
+  </p>
 
-  {tools.length === 0 ? (
-    <p class="empty">No toys yet — check back soon.</p>
-  ) : (
-    <ul id="toys-list">
-      {tools.map((toy) => (
-        <li class="plain-link">
-          <a
-            href={toy.url}
-            class="plain-title"
-            {...(toy.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-          >
-            {toy.title}
-          </a>
-          <p class="plain-desc">{toy.description}</p>
-        </li>
-      ))}
-    </ul>
-  )}
+  {
+    tools.length === 0 ? (
+      <p class="empty">No toys yet — check back soon.</p>
+    ) : (
+      <ul id="toys-list">
+        {tools.map((toy) => (
+          <li class="plain-link">
+            <a
+              href={toy.url}
+              class="plain-title"
+              {...(toy.external
+                ? { target: '_blank', rel: 'noopener noreferrer' }
+                : {})}
+            >
+              {toy.title}
+            </a>
+            <p class="plain-desc">{toy.description}</p>
+          </li>
+        ))}
+      </ul>
+    )
+  }
 </ToyLayout>
 
 <style>
