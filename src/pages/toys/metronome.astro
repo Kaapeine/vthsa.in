@@ -3,7 +3,6 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
 
 // --- geometry (SVG viewBox is 300 x 480) ---
 const PIVOT_X = 150;
-const PIVOT_Y = 430; // hidden behind the base panel
 const SCALE_TOP_Y = 60; // weight position for the slowest tempo
 const SCALE_BOT_Y = 335; // weight position for the fastest tempo
 const BPM_MIN = 40;
@@ -17,8 +16,8 @@ const yForBpm = (bpm: number) =>
 const BODY_TOP_Y = 30;
 const BODY_BOT_Y = 440;
 const edgeX = (y: number, side: -1 | 1) => {
-  const topHalf = 52;
-  const botHalf = 116;
+  const topHalf = 64;
+  const botHalf = 122;
   const t = (y - BODY_TOP_Y) / (BODY_BOT_Y - BODY_TOP_Y);
   const half = topHalf + (botHalf - topHalf) * t;
   return PIVOT_X + side * half;
@@ -28,11 +27,26 @@ const edgeX = (y: number, side: -1 | 1) => {
 // markers bunch up toward the slow (top) end. Built top-value-down.
 const scaleBpms: number[] = [208];
 let _v = 208;
-while (_v > 144) { _v -= 8; scaleBpms.push(_v); } // 200..144 by 8
-while (_v > 120) { _v -= 6; scaleBpms.push(_v); } // 138..120 by 6
-while (_v > 72) { _v -= 4; scaleBpms.push(_v); } //  116..72 by 4
-while (_v > 60) { _v -= 3; scaleBpms.push(_v); } //   69..60 by 3
-while (_v > 40) { _v -= 2; scaleBpms.push(_v); } //   58..40 by 2
+while (_v > 144) {
+  _v -= 8;
+  scaleBpms.push(_v);
+} // 200..144 by 8
+while (_v > 120) {
+  _v -= 6;
+  scaleBpms.push(_v);
+} // 138..120 by 6
+while (_v > 72) {
+  _v -= 4;
+  scaleBpms.push(_v);
+} //  116..72 by 4
+while (_v > 60) {
+  _v -= 3;
+  scaleBpms.push(_v);
+} //   69..60 by 3
+while (_v > 40) {
+  _v -= 2;
+  scaleBpms.push(_v);
+} //   58..40 by 2
 // Alternate sides: 208 left, 200 right, 192 left, …
 const marks = scaleBpms.map((bpm, i) => ({
   bpm,
@@ -69,14 +83,48 @@ const bodyPts = [
   .map((p) => p.join(','))
   .join(' ');
 
-// little pyramid cap on top, slightly overhanging the body
+// little pyramid cap on top, base flush with the body top edge
 const capPts = [
-  [edgeX(BODY_TOP_Y, -1) - 5, BODY_TOP_Y],
-  [edgeX(BODY_TOP_Y, 1) + 5, BODY_TOP_Y],
+  [edgeX(BODY_TOP_Y, -1), BODY_TOP_Y],
+  [edgeX(BODY_TOP_Y, 1), BODY_TOP_Y],
   [PIVOT_X, 6],
 ]
   .map((p) => p.join(','))
   .join(' ');
+
+// Double-edged wood frame around the top (scale) half: a tapered band that
+// follows the body edges from the cap down to the base panel, with the scale
+// showing through the window.
+const FRAME_TOP_Y = BODY_TOP_Y; // 30
+const FRAME_BOT_Y = PANEL_TOP_Y; // 345
+const FW = 9; // frame band width
+const outerFrame = [
+  [edgeX(FRAME_TOP_Y, -1), FRAME_TOP_Y],
+  [edgeX(FRAME_TOP_Y, 1), FRAME_TOP_Y],
+  [edgeX(FRAME_BOT_Y, 1), FRAME_BOT_Y],
+  [edgeX(FRAME_BOT_Y, -1), FRAME_BOT_Y],
+];
+// Inner ring meets the outer ring at BOTH the top and bottom, so the band is
+// just the two side rails — no top or bottom bar.
+const innerFrame = [
+  [edgeX(FRAME_TOP_Y, -1) + FW, FRAME_TOP_Y],
+  [edgeX(FRAME_TOP_Y, 1) - FW, FRAME_TOP_Y],
+  [edgeX(FRAME_BOT_Y, 1) - FW, FRAME_BOT_Y],
+  [edgeX(FRAME_BOT_Y, -1) + FW, FRAME_BOT_Y],
+];
+const toPts = (a: number[][]) => a.map((p) => p.join(',')).join(' ');
+// evenodd path: outer ring minus inner ring = the frame band (the hole is the
+// window the scale shows through).
+const framePath =
+  'M ' +
+  outerFrame.map((p) => p.join(' ')).join(' L ') +
+  ' Z M ' +
+  innerFrame.map((p) => p.join(' ')).join(' L ') +
+  ' Z';
+// Inner bevel as two separate vertical lines (left + right rail inner edges),
+// so no edge is drawn across the top or bottom.
+const bevelLeftPts = toPts([innerFrame[0], innerFrame[3]]);
+const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
 ---
 
 <ToyLayout
@@ -85,10 +133,13 @@ const capPts = [
   description="An analog-style pendulum metronome, 40–208 BPM."
   align="fill"
 >
-  <label class="vib" slot="header-actions">
-    <input type="checkbox" id="vib" />
-    <span>Vibrate</span>
-  </label>
+  <div class="header-wrap" slot="header-actions">
+    <!-- <span class="instruction">Set the tempo by moving the weight; Drag the rod to start</span> -->
+    <label class="vib">
+      <input type="checkbox" id="vib" />
+      <span>Vibrate</span>
+    </label>
+  </div>
 
   <div class="metronome" id="metronome">
     <div
@@ -104,42 +155,118 @@ const capPts = [
       <svg viewBox="0 0 300 480" aria-hidden="true">
         <defs>
           <linearGradient id="body" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#1a1d25" />
-            <stop offset="45%" stop-color="#2a2e39" />
-            <stop offset="55%" stop-color="#2a2e39" />
-            <stop offset="100%" stop-color="#11131a" />
+            <stop offset="0%" stop-color="#0b0b0c"></stop>
+            <stop offset="50%" stop-color="#000000"></stop>
+            <stop offset="100%" stop-color="#000000"></stop>
           </linearGradient>
           <linearGradient id="panel" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#15181f" />
-            <stop offset="50%" stop-color="#23262f" />
-            <stop offset="100%" stop-color="#0c0e13" />
+            <stop offset="0%" stop-color="#15181f"></stop>
+            <stop offset="50%" stop-color="#23262f"></stop>
+            <stop offset="100%" stop-color="#0c0e13"></stop>
           </linearGradient>
           <linearGradient id="rod" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#7d869c" />
-            <stop offset="50%" stop-color="#cfd6e6" />
-            <stop offset="100%" stop-color="#6a7488" />
+            <stop offset="0%" stop-color="#7d869c"></stop>
+            <stop offset="50%" stop-color="#cfd6e6"></stop>
+            <stop offset="100%" stop-color="#6a7488"></stop>
           </linearGradient>
           <linearGradient id="bob" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="#aeb6c8" />
-            <stop offset="100%" stop-color="#5b647a" />
+            <stop offset="0%" stop-color="#aeb6c8"></stop>
+            <stop offset="100%" stop-color="#5b647a"></stop>
           </linearGradient>
           <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="2.5" result="b" />
+            <feGaussianBlur stdDeviation="2.5" result="b"></feGaussianBlur>
             <feMerge>
-              <feMergeNode in="b" />
-              <feMergeNode in="SourceGraphic" />
+              <feMergeNode in="b"></feMergeNode>
+              <feMergeNode in="SourceGraphic"></feMergeNode>
+            </feMerge>
+          </filter>
+
+          <!-- dark rosewood: deep red-brown, sheen rounded across the width -->
+          <linearGradient id="woodgrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#260b07"></stop>
+            <stop offset="42%" stop-color="#4d1810"></stop>
+            <stop offset="58%" stop-color="#3d130c"></stop>
+            <stop offset="100%" stop-color="#160604"></stop>
+          </linearGradient>
+          <!-- elongated turbulence streaks = vertical wood grain, clipped to
+               whatever shape uses the filter and laid over the base wood.
+               Computed in user space, so the grain lines up across the cap,
+               frame and base as if cut from one plank. -->
+          <filter id="woodgrain" x="-5%" y="-5%" width="110%" height="110%">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="0.07 0.009"
+              numOctaves="4"
+              seed="11"
+              result="noise"></feTurbulence>
+            <feColorMatrix
+              in="noise"
+              type="matrix"
+              values="0 0 0 0 0.14
+                      0 0 0 0 0.08
+                      0 0 0 0 0.03
+                      0 0 0 0.5 0"
+              result="grain"></feColorMatrix>
+            <feComposite
+              in="grain"
+              in2="SourceGraphic"
+              operator="in"
+              result="grainIn"></feComposite>
+            <feMerge>
+              <feMergeNode in="SourceGraphic"></feMergeNode>
+              <feMergeNode in="grainIn"></feMergeNode>
             </feMerge>
           </filter>
         </defs>
 
         <!-- body -->
-        <polygon points={bodyPts} fill="url(#body)" stroke="#000" stroke-width="1" />
-        <!-- little pyramid cap -->
-        <polygon points={capPts} fill="url(#body)" stroke="#000" stroke-width="1" />
+        <polygon
+          points={bodyPts}
+          fill="url(#body)"
+          stroke="#000"
+          stroke-width="1"></polygon>
+        <!-- little pyramid cap, in wood -->
+        <polygon
+          points={capPts}
+          fill="url(#woodgrad)"
+          filter="url(#woodgrain)"
+          stroke="#241407"
+          stroke-width="1"
+          stroke-linejoin="round"></polygon>
 
-        <!-- recessed central slot -->
-        <rect x="123" y="48" width="54" height="295" rx="6" fill="#05060a" />
-        <rect x="123" y="48" width="54" height="295" rx="6" fill="none" stroke="#000" stroke-width="1" />
+        <!-- double-edged wood frame around the scale -->
+        <path
+          d={framePath}
+          fill-rule="evenodd"
+          fill="url(#woodgrad)"
+          filter="url(#woodgrain)"
+          stroke="#241407"
+          stroke-width="1.5"
+          stroke-linejoin="round"></path>
+        <!-- inner bevel highlight = the second (inner) edge of each side rail;
+             two separate lines, so no edge crosses the top or bottom -->
+        <polyline
+          points={bevelLeftPts}
+          fill="none"
+          stroke="#caa06a"
+          stroke-width="0.8"
+          opacity="0.5"></polyline>
+        <polyline
+          points={bevelRightPts}
+          fill="none"
+          stroke="#caa06a"
+          stroke-width="0.8"
+          opacity="0.5"></polyline>
+
+        <!-- central channel: black with square white borders -->
+        <rect
+          x="123"
+          y="48"
+          width="54"
+          height="295"
+          fill="#000"
+          stroke="#ffffff"
+          stroke-width="1"></rect>
 
         <!-- tempo numbers, alternating left/right of the slot -->
         <g class="ticks">
@@ -148,15 +275,41 @@ const capPts = [
               const y = yForBpm(m.bpm);
               return m.side === -1 ? (
                 <g>
-                  <line x1={109} y1={y} x2={123} y2={y} stroke="#7a8298" stroke-width="1" />
-                  <text class="num" x={106} y={y} text-anchor="end" dominant-baseline="central">
+                  <line
+                    x1={109}
+                    y1={y}
+                    x2={123}
+                    y2={y}
+                    stroke="#ffffff"
+                    stroke-width="1"
+                  />
+                  <text
+                    class="num"
+                    x={106}
+                    y={y}
+                    text-anchor="end"
+                    dominant-baseline="central"
+                  >
                     {m.bpm}
                   </text>
                 </g>
               ) : (
                 <g>
-                  <line x1={177} y1={y} x2={191} y2={y} stroke="#7a8298" stroke-width="1" />
-                  <text class="num" x={194} y={y} text-anchor="start" dominant-baseline="central">
+                  <line
+                    x1={177}
+                    y1={y}
+                    x2={191}
+                    y2={y}
+                    stroke="#ffffff"
+                    stroke-width="1"
+                  />
+                  <text
+                    class="num"
+                    x={194}
+                    y={y}
+                    text-anchor="start"
+                    dominant-baseline="central"
+                  >
                     {m.bpm}
                   </text>
                 </g>
@@ -169,7 +322,12 @@ const capPts = [
         <g class="zone-labels">
           {
             zones.map((z) => (
-              <text x={150} y={yForBpm(z.bpm)} text-anchor="middle" dominant-baseline="central">
+              <text
+                x={150}
+                y={yForBpm(z.bpm)}
+                text-anchor="middle"
+                dominant-baseline="central"
+              >
                 {z.name}
               </text>
             ))
@@ -178,32 +336,66 @@ const capPts = [
 
         <!-- pendulum: rod + weight, rotates around the (hidden) pivot -->
         <g id="rodgroup">
-          <rect x="147.5" y="40" width="5" height="392" rx="2.5" fill="url(#rod)" />
-          <circle cx="150" cy="42" r="6" fill="url(#rod)" stroke="#2b3040" stroke-width="0.5" />
-          <g id="weight">
+          <rect
+            x="147.5"
+            y="40"
+            width="5"
+            height="392"
+            rx="2.5"
+            fill="url(#rod)"></rect>
+          <circle
+            cx="150"
+            cy="42"
+            r="6"
+            fill="url(#rod)"
+            stroke="#2b3040"
+            stroke-width="0.5"></circle>
+          <g id="weight" transform={`translate(${PIVOT_X} ${yForBpm(120)})`}>
             <polygon
               points="-22,-13 22,-13 17,13 -17,13"
               fill="url(#bob)"
               stroke="#3a4050"
-              stroke-width="1"
-            />
-            <rect x="-3" y="-13" width="6" height="26" fill="#05060a" opacity="0.55" />
+              stroke-width="1"></polygon>
+            <rect
+              x="-3"
+              y="-13"
+              width="6"
+              height="26"
+              fill="#05060a"
+              opacity="0.55"></rect>
           </g>
         </g>
 
-        <!-- base panel ON TOP, hiding the pivot + lower rod -->
-        <polygon points={panelPts} fill="url(#panel)" stroke="#000" stroke-width="1" />
+        <!-- base panel ON TOP, hiding the pivot + lower rod, in wood -->
+        <polygon
+          points={panelPts}
+          fill="url(#woodgrad)"
+          filter="url(#woodgrain)"
+          stroke="#241407"
+          stroke-width="1.5"
+          stroke-linejoin="round"></polygon>
       </svg>
 
       <!-- BPM + controls live in the metronome's bottom panel -->
       <div class="panel-ui">
         <div class="readout">
-          <span class="bpm" id="bpm">120</span>
-          <span class="bpm-unit">BPM</span>
+          <span class="bpm-line">
+            <span class="bpm" id="bpm">120</span>
+            <span class="bpm-unit">BPM</span>
+          </span>
+
+          <span class="zone" id="zone">Allegro</span>
         </div>
-        <span class="zone" id="zone">Allegro</span>
         <div class="controls">
-          <button id="toggle" class="btn btn-primary" type="button">Start</button>
+          <button id="toggle" class="knob-btn" type="button" aria-label="Start">
+            <svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true">
+              <polygon points="8,5 19,12 8,19"></polygon>
+            </svg>
+            <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="7" y="5" width="3.5" height="14" rx="1"></rect>
+              <rect x="13.5" y="5" width="3.5" height="14" rx="1"></rect>
+            </svg>
+          </button>
         </div>
       </div>
     </div>
@@ -238,7 +430,8 @@ const capPts = [
     cursor: grabbing;
   }
   .device:focus-visible {
-    filter: drop-shadow(0 0 0 2px var(--accent)) drop-shadow(0 16px 32px rgba(0, 0, 0, 0.6));
+    filter: drop-shadow(0 0 0 2px var(--accent))
+      drop-shadow(0 16px 32px rgba(0, 0, 0, 0.6));
   }
   .device svg {
     width: 100%;
@@ -252,7 +445,7 @@ const capPts = [
   .ticks .num {
     font-family: 'Space Mono', monospace;
     font-size: 6.5px;
-    fill: #9aa3b8;
+    fill: #ffffff;
   }
   .zone-labels text {
     font-family: 'Space Mono', monospace;
@@ -268,34 +461,61 @@ const capPts = [
   .panel-ui {
     position: absolute;
     left: 50%;
-    top: 72%;
-    transform: translateX(-50%);
+    /* center of the wood base panel (≈ (345+440)/2 of the 480 viewBox) */
+    top: 82%;
+    transform: translate(-50%, -50%);
     width: 62%;
-    height: 19%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 9cqw;
+  }
+  /* Recessed black display window cut into the wood base. "120 BPM" on one
+     row, the tempo name below it; sized to hug its contents. */
+  .readout {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.6cqw;
-  }
-  .readout {
-    display: flex;
-    align-items: baseline;
-    justify-content: center;
-    gap: 1.4cqw;
+    gap: 0.2cqw;
+    /* fixed width so the panel doesn't grow at 3-digit BPMs or long tempo
+       names (widest content is "Prestissimo") */
+    width: 31cqw;
+    box-sizing: border-box;
+    padding: 1.4cqw 3cqw;
+    border-radius: 1.4cqw;
+    background: linear-gradient(180deg, #000 0%, #0c0c0c 100%);
+    border: 1px solid #000;
+    box-shadow:
+      inset 0 0.9cqw 1.2cqw rgba(0, 0, 0, 0.9),
+      inset 0 -0.4cqw 0.5cqw rgba(255, 255, 255, 0.04),
+      0 0.4cqw 0.5cqw rgba(255, 230, 210, 0.07);
   }
   .bpm {
     font-family: 'Space Mono', monospace;
     font-weight: 700;
     font-size: 9cqw;
-    color: var(--accent);
+    color: #fff;
     line-height: 1;
     font-variant-numeric: tabular-nums;
-    text-shadow: 0 0 2cqw rgba(35, 55, 255, 0.5);
+    text-shadow: 0 0 1.5cqw rgba(0, 0, 0, 0.6);
+    /* reserve room for 3 digits and right-align, so "BPM" never shifts —
+       a 2-digit value just leaves blank space on the left */
+    display: inline-block;
+    width: 17.5cqw;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .bpm-line {
+    display: flex;
+    align-items: baseline;
+    white-space: nowrap;
+    gap: 1.6cqw;
   }
   .bpm-unit {
     font-size: 3.4cqw;
-    color: rgb(var(--gray));
+    color: #fff;
     letter-spacing: 0.06em;
   }
   .zone {
@@ -305,26 +525,53 @@ const capPts = [
   }
 
   .controls {
-    display: flex;
+    display: none;
     align-items: center;
     gap: 4cqw;
   }
-  .btn {
-    font-family: 'Space Mono', monospace;
-    font-size: 4cqw;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    color: #fff;
-    background: var(--accent);
-    border: 1px solid var(--accent);
-    border-radius: 999px;
-    padding: 1.6cqw 6cqw;
+  /* Skeuomorphic play/pause button — a raised ebony cap with a soft
+     inset highlight. */
+  .knob-btn {
+    display: grid;
+    place-items: center;
+    width: 17cqw;
+    height: 17cqw;
+    padding: 0;
+    border-radius: 50%;
     cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
+    border: 1px solid #050403;
+    background: linear-gradient(160deg, #2b2622 0%, #14110e 48%, #0a0806 100%);
+    box-shadow:
+      inset 0 0.6cqw 0.6cqw rgba(255, 248, 240, 0.14),
+      inset 0 -0.8cqw 1cqw rgba(0, 0, 0, 0.7),
+      0 1.4cqw 2.4cqw rgba(0, 0, 0, 0.55);
+    transition:
+      box-shadow 0.08s ease,
+      transform 0.08s ease;
   }
-  .btn:hover {
-    background: var(--accent-dark);
-    border-color: var(--accent-dark);
+  .knob-btn:active {
+    transform: translateY(0.4cqw);
+    background: linear-gradient(160deg, #1c1916 0%, #100d0b 48%, #070605 100%);
+    box-shadow:
+      inset 0 0.6cqw 0.8cqw rgba(0, 0, 0, 0.6),
+      inset 0 -0.4cqw 0.6cqw rgba(255, 248, 240, 0.07),
+      0 0.5cqw 1cqw rgba(0, 0, 0, 0.5);
+  }
+  .knob-btn svg {
+    width: 8.5cqw;
+    height: 8.5cqw;
+    fill: #f0e6df;
+    filter: drop-shadow(0 0.3cqw 0.3cqw rgba(0, 0, 0, 0.6));
+  }
+  /* show the icon matching the next action: play when stopped, pause when running */
+  .knob-btn .icon-pause {
+    display: none;
+  }
+  .knob-btn.running .icon-play {
+    display: none;
+  }
+  .knob-btn.running .icon-pause {
+    display: block;
   }
   /* Vibrate toggle lives in the ToyLayout header (no container context there,
      so use fixed rem sizing rather than container units). */
@@ -342,6 +589,15 @@ const capPts = [
     width: 1rem;
     height: 1rem;
     cursor: pointer;
+  }
+  .header-wrap {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .instruction {
+    font-style: italic;
+    font-size: 0.7rem;
   }
 </style>
 
@@ -486,7 +742,10 @@ const capPts = [
 
     // ---- rendering ----
     function setRodAngle(deg: number) {
-      rodgroup.setAttribute('transform', `rotate(${deg} ${PIVOT_X} ${PIVOT_Y})`);
+      rodgroup.setAttribute(
+        'transform',
+        `rotate(${deg} ${PIVOT_X} ${PIVOT_Y})`,
+      );
     }
     function renderWeight() {
       weight.setAttribute('transform', `translate(${PIVOT_X} ${yForBpm(bpm)})`);
@@ -537,7 +796,8 @@ const capPts = [
       // first beat a hair in the future so it schedules cleanly
       startAudioTime = ctx.currentTime + 0.06;
       nextNoteTime = startAudioTime;
-      toggleBtn.textContent = 'Stop';
+      toggleBtn.classList.add('running');
+      toggleBtn.setAttribute('aria-label', 'Pause');
       clearInterval(schedulerId);
       schedulerId = window.setInterval(scheduler, SCHED_INTERVAL);
       scheduler();
@@ -550,52 +810,89 @@ const capPts = [
       schedulerId = 0;
       cancelAnimationFrame(rafId);
       setRodAngle(0);
-      toggleBtn.textContent = 'Start';
+      toggleBtn.classList.remove('running');
+      toggleBtn.setAttribute('aria-label', 'Start');
     }
 
-    // Adjust tempo live: rebase the beat clock so the pulse continues cleanly.
+    // Adjust tempo live. While running, re-time the beat to the new tempo but
+    // PRESERVE the current phase, so the pendulum keeps swinging smoothly and
+    // the change itself never triggers an extra click.
     function setBpm(next: number) {
       const clamped = Math.max(BPM_MIN, Math.min(BPM_MAX, next));
       if (clamped === bpm) return;
-      const atEnd = clamped === BPM_MIN || clamped === BPM_MAX;
+      const prevBpm = bpm;
       bpm = clamped;
       renderAll();
-      // tactile feedback when the weight reaches either travel limit
-      if (atEnd) {
-        playClick();
-        vibrate(20);
-      }
       if (running && audioCtx) {
-        startAudioTime = audioCtx.currentTime + 0.06;
-        nextNoteTime = startAudioTime;
+        const now = audioCtx.currentTime;
+        const oldBeat = 60 / prevBpm;
+        const newBeat = 60 / bpm;
+        // fraction (0..1) through the current beat
+        const frac = ((((now - startAudioTime) / oldBeat) % 1) + 1) % 1;
+        startAudioTime = now - frac * newBeat;
+        nextNoteTime = startAudioTime + newBeat; // next whole beat, not now
       }
     }
 
-    // ---- drag to set tempo (pointer Y -> bpm via the fixed scale) ----
+    // Pointer Y -> bpm via the fixed scale (for dragging the weight).
     function pointerToBpm(clientY: number) {
       const rect = device.getBoundingClientRect();
       const svgY = ((clientY - rect.top) / rect.height) * 480;
       return bpmForY(svgY);
     }
-    let dragging = false;
+    // Pointer position -> rod angle about the (hidden) pivot, clamped to the
+    // swing range (for dragging the rod to push it into motion).
+    function pointerToAngle(clientX: number, clientY: number) {
+      const rect = device.getBoundingClientRect();
+      const svgX = ((clientX - rect.left) / rect.width) * 300;
+      const svgY = ((clientY - rect.top) / rect.height) * 480;
+      const deg = (Math.atan2(svgX - PIVOT_X, PIVOT_Y - svgY) * 180) / Math.PI;
+      return Math.max(-MAX_ANGLE, Math.min(MAX_ANGLE, deg));
+    }
+
+    // Two distinct gestures: drag the WEIGHT to set tempo, or drag the ROD to
+    // swing it and let go to start the motion.
+    let mode: 'none' | 'tempo' | 'swing' = 'none';
     device.addEventListener('pointerdown', (e) => {
-      // don't start a tempo drag when interacting with the panel controls
-      if ((e.target as HTMLElement).closest('.panel-ui')) return;
-      dragging = true;
-      device.setPointerCapture(e.pointerId);
-      setBpm(pointerToBpm(e.clientY));
+      const t = e.target as Element;
+      if (t.closest('.panel-ui')) return; // panel controls handle themselves
+      // Dragging the weight always adjusts tempo, running or not.
+      if (weight.contains(t)) {
+        mode = 'tempo';
+        device.setPointerCapture(e.pointerId);
+        setBpm(pointerToBpm(e.clientY));
+        return;
+      }
+      // While running, touching the rod or body stops it (like catching the
+      // pendulum).
+      if (running) {
+        stop();
+        return;
+      }
+      // Stopped: grab the rod to push it; release starts the swing.
+      if (rodgroup.contains(t)) {
+        mode = 'swing';
+        device.setPointerCapture(e.pointerId);
+        cancelAnimationFrame(rafId);
+        setRodAngle(pointerToAngle(e.clientX, e.clientY));
+      }
     });
     device.addEventListener('pointermove', (e) => {
-      if (dragging) setBpm(pointerToBpm(e.clientY));
+      if (mode === 'tempo') setBpm(pointerToBpm(e.clientY));
+      else if (mode === 'swing')
+        setRodAngle(pointerToAngle(e.clientX, e.clientY));
     });
     function endDrag(e: PointerEvent) {
-      if (!dragging) return;
-      dragging = false;
+      if (mode === 'none') return;
+      const wasSwing = mode === 'swing';
+      mode = 'none';
       try {
         device.releasePointerCapture(e.pointerId);
       } catch {
         /* ignore */
       }
+      // letting go of the rod sets it going
+      if (wasSwing) start();
     }
     device.addEventListener('pointerup', endDrag);
     device.addEventListener('pointercancel', endDrag);
