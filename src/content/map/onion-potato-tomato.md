@@ -1,5 +1,5 @@
 ---
-title: Onion Potato Tomato
+title: Onion Tomato Potato
 category: misc
 lat: 12.926934
 lng: 77.554003
