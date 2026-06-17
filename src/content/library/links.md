@@ -1,5 +1,10 @@
 ---
 links:
+  - title: Tools for Dérive
+    url: 'https://derive.stranno.su/'
+    description: 'Ideas for loafing around, from the Situationists'
+    tags:
+      - fun
   - title: The Architecture of Processing.js
     url: 'https://aosabook.org/en/v2/pjs.html'
     description: Running Processing code by transcompiling Java to Javascript
@@ -14,7 +19,8 @@ links:
     url: >-
       https://mjswensen.com/blog/the-single-most-important-factor-that-differentiates-front-end-frameworks/
     description: >-
-      React gets too much hate but it does provide the easiest mental model for handling change detection
+      React gets too much hate but it does provide the easiest mental model for
+      handling change detection
     tags:
       - cs
   - title: Tiny VLLM
