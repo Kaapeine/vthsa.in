@@ -134,7 +134,9 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
   align="fill"
 >
   <div class="header-wrap" slot="header-actions">
-    <!-- <span class="instruction">Set the tempo by moving the weight; Drag the rod to start</span> -->
+    <span class="instruction"
+      >Set the tempo by moving the weight; Drag the rod to start</span
+    >
     <label class="vib">
       <input type="checkbox" id="vib" />
       <span>Vibrate</span>
@@ -336,6 +338,17 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
 
         <!-- pendulum: rod + weight, rotates around the (hidden) pivot -->
         <g id="rodgroup">
+          <!-- invisible wide hit area so the thin rod is easy to grab (esp. on
+               touch). First child + pointer-events:all; the weight is painted
+               after this, so it still wins touches over itself. -->
+          <rect
+            id="rod-hit"
+            x="128"
+            y="40"
+            width="44"
+            height="392"
+            fill="none"
+            pointer-events="all"></rect>
           <rect
             x="147.5"
             y="40"
@@ -346,7 +359,7 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
           <circle
             cx="150"
             cy="42"
-            r="6"
+            r="9"
             fill="url(#rod)"
             stroke="#2b3040"
             stroke-width="0.5"></circle>
@@ -419,15 +432,11 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
     aspect-ratio: 300 / 480;
     container-type: size;
     position: relative;
-    cursor: grab;
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
     outline: none;
     filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.6));
-  }
-  .device:active {
-    cursor: grabbing;
   }
   .device:focus-visible {
     filter: drop-shadow(0 0 0 2px var(--accent))
@@ -437,6 +446,13 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
     width: 100%;
     height: 100%;
     display: block;
+  }
+  /* Grab cursor only over the interactive pendulum (rod + weight). */
+  #rodgroup {
+    cursor: grab;
+  }
+  .device:active #rodgroup {
+    cursor: grabbing;
   }
   /* No transition on the rod — it's driven frame-by-frame while running. */
   #rodgroup {
@@ -645,8 +661,12 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
 
     let bpm = 120;
     let running = false;
-    let startAudioTime = 0; // audio-clock time of beat 0 (a swing extreme)
-    let nextNoteTime = 0; // audio-clock time of the next beat to schedule
+    // The pendulum runs on the wall clock (performance.now), so it swings even
+    // before the AudioContext has resumed — on mobile the audio clock starts
+    // frozen, which used to freeze the animation. swingStartMs is the time of
+    // visual phase 0 (a swing extreme); beats fall on integer phases.
+    let swingStartMs = 0;
+    let lastBeatIndex = -1; // highest beat index already scheduled for audio
     let rafId = 0;
     let schedulerId = 0;
     const LOOKAHEAD = 0.1; // schedule beats up to 100ms ahead (s)
@@ -706,6 +726,16 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
       }
     }
 
+    function vibrate(ms: number) {
+      if (vibChk.checked && 'vibrate' in navigator) {
+        try {
+          navigator.vibrate(ms);
+        } catch {
+          /* best effort */
+        }
+      }
+    }
+
     // short click for when the weight hits a travel limit
     function playClick() {
       const ctx = ensureAudio();
@@ -730,18 +760,10 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
       src.start(now);
     }
 
-    function vibrate(ms: number) {
-      if (vibChk.checked && 'vibrate' in navigator) {
-        try {
-          navigator.vibrate(ms);
-        } catch {
-          /* best effort */
-        }
-      }
-    }
-
     // ---- rendering ----
+    let currentAngle = 0; // last rod angle drawn, in degrees
     function setRodAngle(deg: number) {
+      currentAngle = deg;
       rodgroup.setAttribute(
         'transform',
         `rotate(${deg} ${PIVOT_X} ${PIVOT_Y})`,
@@ -767,35 +789,51 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
     // rate or main-thread jitter. (Pattern: "A Tale of Two Clocks".)
     function scheduler() {
       const ctx = audioCtx;
-      if (!ctx) return;
-      const beatSec = 60 / bpm;
-      while (nextNoteTime < ctx.currentTime + LOOKAHEAD) {
-        playTick(nextNoteTime);
-        // Haptics can't be scheduled on the audio clock, so fire them near the
-        // beat with a timeout — they don't need sample accuracy.
-        const delayMs = (nextNoteTime - ctx.currentTime) * 1000;
-        setTimeout(() => vibrate(15), Math.max(0, delayMs));
-        nextNoteTime += beatSec;
+      // Only schedule once the context is actually running; until then the
+      // pendulum still swings on the wall clock and beats are simply skipped.
+      if (!ctx || ctx.state !== 'running') return;
+      const beatMs = (60 / bpm) * 1000;
+      const nowMs = performance.now();
+      // first unscheduled beat at or after now
+      let k = Math.max(
+        lastBeatIndex + 1,
+        Math.ceil((nowMs - swingStartMs) / beatMs - 1e-6),
+      );
+      for (;;) {
+        const beatWallMs = swingStartMs + k * beatMs;
+        const leadMs = beatWallMs - nowMs;
+        if (leadMs / 1000 >= LOOKAHEAD) break;
+        // map the beat's wall time onto the audio clock for sample-accurate play
+        playTick(ctx.currentTime + Math.max(0, leadMs) / 1000);
+        setTimeout(() => vibrate(15), Math.max(0, beatWallMs - performance.now()));
+        lastBeatIndex = k;
+        k++;
       }
     }
 
-    function animate() {
-      const ctx = audioCtx;
-      if (ctx) {
-        const beatSec = 60 / bpm;
-        const phase = (ctx.currentTime - startAudioTime) / beatSec;
-        setRodAngle(MAX_ANGLE * Math.cos(Math.PI * phase));
-      }
+    function animate(nowMs: number) {
+      const beatSec = 60 / bpm;
+      const phase = (nowMs - swingStartMs) / 1000 / beatSec;
+      setRodAngle(MAX_ANGLE * Math.cos(Math.PI * phase));
       rafId = requestAnimationFrame(animate);
     }
 
-    function start() {
-      const ctx = ensureAudio();
-      if (!ctx) return;
+    // Start swinging. `fromDeg` is the angle to begin from (the rod's current
+    // position when released by a drag); default is the right extreme, used by
+    // the spacebar/button. Phase is chosen so the swing continues smoothly from
+    // that angle, heading back toward center — no jump to the other side.
+    function start(fromDeg = MAX_ANGLE) {
+      ensureAudio(); // create + resume; may finish asynchronously on mobile
       running = true;
-      // first beat a hair in the future so it schedules cleanly
-      startAudioTime = ctx.currentTime + 0.06;
-      nextNoteTime = startAudioTime;
+      const beatSec = 60 / bpm;
+      const clamped = Math.max(-MAX_ANGLE, Math.min(MAX_ANGLE, fromDeg));
+      // angle = MAX·cos(π·phase); solve for the phase at this angle, on the
+      // returning side for a left-of-center release.
+      let phase = Math.acos(clamped / MAX_ANGLE) / Math.PI; // 0..1
+      if (clamped < 0) phase = 2 - phase; // 1..1.5 → moving back toward center
+      swingStartMs = performance.now() - phase * beatSec * 1000;
+      // the next beat to schedule is the next swing extreme (integer phase)
+      lastBeatIndex = Math.ceil(phase - 1e-6) - 1;
       toggleBtn.classList.add('running');
       toggleBtn.setAttribute('aria-label', 'Pause');
       clearInterval(schedulerId);
@@ -809,9 +847,28 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
       clearInterval(schedulerId);
       schedulerId = 0;
       cancelAnimationFrame(rafId);
-      setRodAngle(0);
+      glideToCenter();
       toggleBtn.classList.remove('running');
       toggleBtn.setAttribute('aria-label', 'Start');
+    }
+
+    // Ease the rod from its current angle back to upright after stopping.
+    function glideToCenter() {
+      const from = currentAngle;
+      if (Math.abs(from) < 0.05) {
+        setRodAngle(0);
+        return;
+      }
+      const dur = 450;
+      const t0 = performance.now();
+      cancelAnimationFrame(rafId);
+      const step = (now: number) => {
+        const k = Math.min(1, (now - t0) / dur);
+        const e = 1 - Math.pow(1 - k, 3); // easeOutCubic
+        setRodAngle(from * (1 - e));
+        if (k < 1) rafId = requestAnimationFrame(step);
+      };
+      rafId = requestAnimationFrame(step);
     }
 
     // Adjust tempo live. While running, re-time the beat to the new tempo but
@@ -823,14 +880,21 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
       const prevBpm = bpm;
       bpm = clamped;
       renderAll();
-      if (running && audioCtx) {
-        const now = audioCtx.currentTime;
-        const oldBeat = 60 / prevBpm;
-        const newBeat = 60 / bpm;
-        // fraction (0..1) through the current beat
-        const frac = ((((now - startAudioTime) / oldBeat) % 1) + 1) % 1;
-        startAudioTime = now - frac * newBeat;
-        nextNoteTime = startAudioTime + newBeat; // next whole beat, not now
+      // tactile click when the weight first reaches either travel limit (fires
+      // once — repeats are short-circuited by the clamped === bpm guard above)
+      if (clamped === BPM_MIN || clamped === BPM_MAX) {
+        playClick();
+        vibrate(20);
+      }
+      if (running) {
+        const nowMs = performance.now();
+        const oldBeatMs = (60 / prevBpm) * 1000;
+        const newBeatMs = (60 / bpm) * 1000;
+        // keep the same fractional phase so the pendulum doesn't jump
+        const frac = ((((nowMs - swingStartMs) / oldBeatMs) % 1) + 1) % 1;
+        swingStartMs = nowMs - frac * newBeatMs;
+        // next beat to schedule is the upcoming extreme at the new tempo
+        lastBeatIndex = Math.ceil((nowMs - swingStartMs) / newBeatMs - 1e-6) - 1;
       }
     }
 
@@ -891,8 +955,8 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
       } catch {
         /* ignore */
       }
-      // letting go of the rod sets it going
-      if (wasSwing) start();
+      // letting go of the rod sets it going from where it was released
+      if (wasSwing) start(currentAngle);
     }
     device.addEventListener('pointerup', endDrag);
     device.addEventListener('pointercancel', endDrag);
@@ -907,12 +971,26 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
       }
     });
 
+    // Spacebar plays/pauses from anywhere on the page (the play button is
+    // hidden), unless focus is on a form control like the Vibrate checkbox.
+    function onSpace(e: KeyboardEvent) {
+      if (e.code !== 'Space' && e.key !== ' ') return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'BUTTON' || t.isContentEditable)) {
+        return;
+      }
+      e.preventDefault();
+      running ? stop() : start();
+    }
+    window.addEventListener('keydown', onSpace);
+
     toggleBtn.addEventListener('click', () => (running ? stop() : start()));
 
     // ---- cleanup on navigation ----
     function cleanup() {
       cancelAnimationFrame(rafId);
       clearInterval(schedulerId);
+      window.removeEventListener('keydown', onSpace);
       if ('vibrate' in navigator) {
         try {
           navigator.vibrate(0);

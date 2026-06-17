@@ -114,9 +114,14 @@ const pageTitle = toyName ?? 'Toys';
     box-sizing: border-box;
   }
   @media (max-width: 480px) {
+    /* Stack on mobile: breadcrumbs alone on the top row, header actions wrap
+       to a second row below. */
     .toy-header {
       height: auto;
       padding: 0.6rem 1rem;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
     }
   }
 
