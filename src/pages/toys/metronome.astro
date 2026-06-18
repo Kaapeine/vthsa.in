@@ -135,7 +135,7 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
 >
   <div class="header-wrap" slot="header-actions">
     <span class="instruction"
-      >Set the tempo by moving the weight; Drag the rod to start</span
+      >Move weight to set tempo; Drag pendulum to start</span
     >
     <label class="vib">
       <input type="checkbox" id="vib" />
@@ -339,7 +339,6 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
             ))
           }
         </g>
-
       </svg>
 
       <!-- pendulum layer: animated, no filters -->
@@ -366,7 +365,7 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
             fill="url(#rod)"></rect>
           <circle
             cx="150"
-            cy="42"
+            cy="38"
             r="9"
             fill="url(#rod)"
             stroke="#2b3040"
@@ -386,7 +385,6 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
               opacity="0.55"></rect>
           </g>
         </g>
-
       </svg>
 
       <!-- panel layer ON TOP, hiding the pivot + lower rod, in wood -->
@@ -838,7 +836,10 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
         if (leadMs / 1000 >= LOOKAHEAD) break;
         // map the beat's wall time onto the audio clock for sample-accurate play
         playTick(ctx.currentTime + Math.max(0, leadMs) / 1000);
-        setTimeout(() => vibrate(15), Math.max(0, beatWallMs - performance.now()));
+        setTimeout(
+          () => vibrate(15),
+          Math.max(0, beatWallMs - performance.now()),
+        );
         lastBeatIndex = k;
         k++;
       }
@@ -927,7 +928,8 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
         const frac = ((((nowMs - swingStartMs) / oldBeatMs) % 1) + 1) % 1;
         swingStartMs = nowMs - frac * newBeatMs;
         // next beat to schedule is the upcoming extreme at the new tempo
-        lastBeatIndex = Math.ceil((nowMs - swingStartMs) / newBeatMs - 1e-6) - 1;
+        lastBeatIndex =
+          Math.ceil((nowMs - swingStartMs) / newBeatMs - 1e-6) - 1;
       }
     }
 
@@ -1009,7 +1011,10 @@ const bevelRightPts = toPts([innerFrame[1], innerFrame[2]]);
     function onSpace(e: KeyboardEvent) {
       if (e.code !== 'Space' && e.key !== ' ') return;
       const t = e.target as HTMLElement | null;
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'BUTTON' || t.isContentEditable)) {
+      if (
+        t &&
+        (t.tagName === 'INPUT' || t.tagName === 'BUTTON' || t.isContentEditable)
+      ) {
         return;
       }
       e.preventDefault();
