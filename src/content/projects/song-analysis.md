@@ -1,7 +1,7 @@
 ---
 title: 'Song Composition Analyzer'
 description: 'A web app to run MIR models on songs and extract stems, key, chords, chord progressions, tempo, loudness, tension. Superseded by CohereMix'
-externalUrl: ''
+externalUrl: 'https://cassette-reader.vthsa.in'
 thumbnailImage: 'songcomposition_thumbnail.png'
 date: 2026-05-15
 tags: ['audio', 'webdev', 'python']
