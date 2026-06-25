@@ -1,5 +1,9 @@
 ---
 links:
+  - title: TensorFlow playgroud
+    url: 'https://playground.tensorflow.org'
+    description: Play with small neural networks and see what each neuron learns
+    tags: []
   - title: Tools for Dérive
     url: 'https://derive.stranno.su/'
     description: 'Ideas for loafing around, from the Situationists'
