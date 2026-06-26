@@ -11,7 +11,8 @@
     "preview": "astro preview",
     "start": "node --env-file=.env ./dist/server/entry.mjs",
     "deploy": "node ./dist/server/entry.mjs",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "vitest run"
   },
   "dependencies": {
     "@astrojs/mdx": "^5.0.6",
@@ -19,11 +20,17 @@
     "@astrojs/rss": "^4.0.18",
     "@astrojs/sitemap": "^3.7.2",
     "astro": "^6.4.2",
+    "d3-quadtree": "^3.0.1",
+    "flatgeobuf": "^4.4.0",
     "gray-matter": "^4.0.3",
+    "maplibre-gl": "^5.24.0",
+    "pmtiles": "^4.4.1",
     "sharp": "^0.34.3"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
-    "typescript": "^6.0.3"
+    "@types/d3-quadtree": "^3.0.6",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
   }
 }
