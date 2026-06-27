@@ -1,5 +1,5 @@
 ---
-title: LRU cache style bookmarks bar
+title: BarFly - LRU cache style bookmarks bar
 pubDate: '2026-06-26'
 tags:
   - dev
