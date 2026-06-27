@@ -4,9 +4,11 @@ links:
     url: 'https://playground.tensorflow.org'
     description: Play with small neural networks and see what each neuron learns
     tags: []
+    date: '2026-06-25'
   - title: Tools for Dérive
     url: 'https://derive.stranno.su/'
     description: 'Ideas for loafing around, from the Situationists'
+    date: '2026-06-20'
     tags:
       - fun
   - title: The Architecture of Processing.js
