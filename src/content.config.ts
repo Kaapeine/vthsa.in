@@ -57,6 +57,7 @@ const library = defineCollection({
 			url: z.string(),
 			description: z.string(),
 			tags: z.array(z.string()),
+			date: z.coerce.date().optional(),
 		})),
 	}),
 });

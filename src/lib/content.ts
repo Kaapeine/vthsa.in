@@ -15,6 +15,7 @@ export interface LibraryLink {
   url: string;
   description: string;
   tags: string[];
+  date?: string; // ISO YYYY-MM-DD
 }
 
 /** Convert a title into a filesystem/url-safe slug. */

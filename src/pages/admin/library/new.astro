@@ -1,6 +1,7 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { isAuthenticated } from '../../../lib/auth';
+import { isAuthenticated, } from '../../../lib/auth';
+import { todayIso } from '../../../lib/content';
 
 export const prerender = false;
 
@@ -8,6 +9,7 @@ if (!isAuthenticated(Astro.request.headers.get('cookie'))) {
   return Astro.redirect('/admin');
 }
 const error = Astro.url.searchParams.get('error');
+const today = todayIso();
 ---
 
 <AdminLayout title="add link">
@@ -31,6 +33,10 @@ const error = Astro.url.searchParams.get('error');
       <div class="field">
         <label for="tags">Tags (comma-separated)</label>
         <input id="tags" name="tags" />
+      </div>
+      <div class="field">
+        <label for="date">Date</label>
+        <input id="date" name="date" type="date" value={today} />
       </div>
       <button type="submit" class="save-btn">Add link</button>
     </form>

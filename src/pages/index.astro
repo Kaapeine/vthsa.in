@@ -1,11 +1,63 @@
 ---
+import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+
+function fmtDate(d: Date): string {
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(2);
+  return `${dd}/${mm}/${yy}`;
+}
+
+type RecentItem = { date: Date; type: string; title: string; href: string };
+
+const items: RecentItem[] = [];
+
+const posts = await getCollection('blog');
+for (const p of posts) {
+  if (p.data.draft) continue;
+  items.push({ date: p.data.pubDate, type: 'post', title: p.data.title, href: `/writing/${p.id}/` });
+}
+
+const projects = await getCollection('projects');
+for (const p of projects) {
+  const href = p.data.onlyLink ? p.data.externalUrl : `/projects/${p.id}/`;
+  items.push({ date: p.data.date, type: 'project', title: p.data.title, href });
+}
+
+const music = await getCollection('music');
+for (const m of music) {
+  const href = m.data.onlyLink ? m.data.externalUrl : `/music/${m.id}/`;
+  items.push({ date: m.data.date, type: 'music', title: m.data.title, href });
+}
+
+const mapPins = await getCollection('map');
+for (const pin of mapPins) {
+  items.push({
+    date: pin.data.pubDate,
+    type: 'pin',
+    title: pin.data.title,
+    href: `/sightings?lat=${pin.data.lat}&lng=${pin.data.lng}`,
+  });
+}
+
+const library = await getCollection('library');
+for (const entry of library) {
+  for (const link of entry.data.links) {
+    if (!link.date) continue;
+    items.push({ date: link.date, type: 'link', title: link.title, href: link.url });
+  }
+}
+
+const recent = items
+  .sort((a, b) => b.date.valueOf() - a.date.valueOf())
+  .slice(0, 5);
 ---
 
 <BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
   <p>
-    I’m Vathsa, a Software Engineer currently living in Bangalore, India.
+    I'm Vathsa, a Software Engineer currently living in Bangalore, India.
     Outside of work, I make music on Ableton and play guitar.
   </p>
 
@@ -13,4 +65,79 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
     Check out my writing, music, projects or learn more about me and get in
     touch. I'm currently open to work as Full Stack Engineer.
   </p>
+
+  <p class="section-heading">Recents</p>
+  <ul class="recents">
+    {recent.map((item) => (
+      <li>
+        <a
+          href={item.href}
+          class="item-link"
+          target={item.href.startsWith('http') ? '_blank' : undefined}
+          rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+        >
+          <span class="item-type">{item.type}</span>
+          <span class="item-sep">—</span>
+          <span class="item-title">{item.title}</span>
+          <span class="item-date">{fmtDate(item.date)}</span>
+        </a>
+      </li>
+    ))}
+  </ul>
 </BaseLayout>
+
+<style>
+  .section-heading {
+    margin: 2rem 0 0.5rem;
+    font-size: 1em;
+    text-transform: uppercase;
+    color: rgb(var(--gray));
+  }
+
+  .recents {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .item-link {
+    display: grid;
+    grid-template-columns: 3.5rem 1.5rem 1fr auto;
+    align-items: baseline;
+    gap: 0;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .item-link:hover .item-title {
+    text-decoration: underline 2px var(--accent);
+    text-underline-offset: 4px;
+  }
+
+  .item-type {
+    font-size: 0.85em;
+    color: #fff;
+    text-transform: capitalize;
+  }
+
+  .item-sep {
+    font-size: 0.85em;
+    color: rgb(var(--gray));
+  }
+
+  .item-title {
+    font-size: 0.85em;
+    color: #fff;
+  }
+
+  .item-date {
+    font-size: 0.78em;
+    color: rgb(var(--gray));
+    white-space: nowrap;
+    padding-left: 1rem;
+  }
+
+</style>

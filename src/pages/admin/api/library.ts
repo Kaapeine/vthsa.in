@@ -21,6 +21,8 @@ export const POST: APIRoute = async ({ request }) => {
   const url = String(form.get('url') ?? '').trim();
   const description = String(form.get('description') ?? '').trim();
   const tags = parseTags(String(form.get('tags') ?? ''));
+  const dateRaw = String(form.get('date') ?? '').trim();
+  const date = dateRaw || undefined;
 
   if (!title || !url || !description) {
     return fail('Title, URL, and description are required.');
@@ -39,7 +41,7 @@ export const POST: APIRoute = async ({ request }) => {
     const file = await getFile(LINKS_PATH);
     if (!file) return fail('links.md not found in the repo.');
     const existing = parseLinksFile(file.text);
-    const next: LibraryLink[] = [{ title, url, description, tags }, ...existing];
+    const next: LibraryLink[] = [{ title, url, description, tags, date }, ...existing];
     await putFile(LINKS_PATH, buildLinksFile(next), `Add library link: ${title}`, file.sha);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';

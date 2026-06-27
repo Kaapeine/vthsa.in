@@ -351,6 +351,20 @@ const tags = entries.map((e) => ({
           listClose.addEventListener('click', closeList);
           listBackdrop.addEventListener('click', closeList);
 
+          // Deep-link: /sightings?lat=X&lng=Y centers the map and opens the pin.
+          const params = new URLSearchParams(location.search);
+          const dlLat = parseFloat(params.get('lat') ?? '');
+          const dlLng = parseFloat(params.get('lng') ?? '');
+          if (!isNaN(dlLat) && !isNaN(dlLng)) {
+            const target = tags.find(
+              (t) => Math.abs(t.lat - dlLat) < 0.0001 && Math.abs(t.lng - dlLng) < 0.0001,
+            );
+            if (target) {
+              map.setView([target.lat, target.lng], 16);
+              openModal(target);
+            }
+          }
+
           // Keep panels below the header regardless of its height.
           const header = document.querySelector('.map-header');
           function updatePanelTop() {
