@@ -43,6 +43,21 @@ const { title, description, externalUrl, date, tags } = project.data;
   </article>
 </BaseLayout>
 
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+
+  // Shiki processes mermaid blocks into styled spans before Mermaid can see them.
+  // Extract raw text and swap in a plain div that Mermaid can render.
+  for (const pre of document.querySelectorAll('pre[data-language="mermaid"]')) {
+    const div = document.createElement('div');
+    div.className = 'mermaid';
+    div.textContent = pre.querySelector('code')?.textContent ?? '';
+    pre.replaceWith(div);
+  }
+  await mermaid.run({ querySelector: '.mermaid' });
+</script>
+
 <style>
   .prose {
     width: 100%;

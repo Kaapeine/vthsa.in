@@ -17,7 +17,12 @@ const items: RecentItem[] = [];
 const posts = await getCollection('blog');
 for (const p of posts) {
   if (p.data.draft) continue;
-  items.push({ date: p.data.pubDate, type: 'post', title: p.data.title, href: `/writing/${p.id}/` });
+  items.push({
+    date: p.data.pubDate,
+    type: 'post',
+    title: p.data.title,
+    href: `/writing/${p.id}/`,
+  });
 }
 
 const projects = await getCollection('projects');
@@ -46,7 +51,12 @@ const library = await getCollection('library');
 for (const entry of library) {
   for (const link of entry.data.links) {
     if (!link.date) continue;
-    items.push({ date: link.date, type: 'link', title: link.title, href: link.url });
+    items.push({
+      date: link.date,
+      type: 'link',
+      title: link.title,
+      href: link.url,
+    });
   }
 }
 
@@ -68,21 +78,25 @@ const recent = items
 
   <p class="section-heading">Recents</p>
   <ul class="recents">
-    {recent.map((item) => (
-      <li>
-        <a
-          href={item.href}
-          class="item-link"
-          target={item.href.startsWith('http') ? '_blank' : undefined}
-          rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-        >
-          <span class="item-type">{item.type}</span>
-          <span class="item-sep">—</span>
-          <span class="item-title">{item.title}</span>
-          <span class="item-date">{fmtDate(item.date)}</span>
-        </a>
-      </li>
-    ))}
+    {
+      recent.map((item) => (
+        <li>
+          <a
+            href={item.href}
+            class="item-link"
+            target={item.href.startsWith('http') ? '_blank' : undefined}
+            rel={
+              item.href.startsWith('http') ? 'noopener noreferrer' : undefined
+            }
+          >
+            <span class="item-type">{item.type}</span>
+            <span class="item-sep">—</span>
+            <span class="item-title">{item.title}</span>
+            <span class="item-date">{fmtDate(item.date)}</span>
+          </a>
+        </li>
+      ))
+    }
   </ul>
 </BaseLayout>
 
@@ -105,7 +119,7 @@ const recent = items
 
   .item-link {
     display: grid;
-    grid-template-columns: 3.5rem 1.5rem 1fr auto;
+    grid-template-columns: 4rem 1.5rem 1fr auto;
     align-items: baseline;
     gap: 0;
     text-decoration: none;
@@ -139,5 +153,4 @@ const recent = items
     white-space: nowrap;
     padding-left: 1rem;
   }
-
 </style>

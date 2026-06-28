@@ -1,5 +1,5 @@
 ---
-title: BarFly - LRU cache style bookmarks bar
+title: BarFly - LRU Cache Style Bookmarks Bar
 pubDate: '2026-06-26'
 tags:
   - dev
@@ -31,4 +31,4 @@ Because the extension takes over the native bookmarks bar, several interactions 
 
 - Core logic to manage the duplicates and handle the LRU-style eviction is written as a standalone module independent of browser APIs. Browser APIs are called through an adapter layer, and I can switch this out to handle Chrome/Firefox APIs. This also meant that I could run the full test suite with a fake bookmark API and catch bugs in the logic. Right now, I only have a Firefox adapter because that's what I run, and I'll add Chrome support after more daily usage and testing.
 
-I tried to build this extension in a way that makes it feel like this feature is just part of the existing bookmarks bar. It reuses things that are already there - the native toolbar, the separator element, browser events and bookmarks API. Coordinating everything involved some interesting challenges and making this work on top of the native toolbar meant that I had to handle lots of different edge cases, but getting this right gave me the LRU-style bookmarks organization I wanted, while being as unintrusive as possible.
+I tried to build this extension in a way that makes it feel like this feature is just part of the existing bookmarks bar. It reuses things that are already there - the native toolbar, the separator element, browser events and bookmarks API. Coordinating everything involved some interesting challenges and making this work on top of the native toolbar meant that I had to handle lots of different edge cases, but getting this right gave me the LRU-style bookmarks organization I wanted, while being as natural to use as possible.
