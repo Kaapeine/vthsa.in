@@ -1,5 +1,12 @@
 ---
 links:
+  - title: Logical Progression vol. 1
+    url: >-
+      https://music.youtube.com/playlist?list=OLAK5uy_mKFxU37sGaxRsopEEd005zMA37xj3BKDI&si=8c-2VdwuF3LmRaHj
+    description: 'Fav track: Senses'
+    tags:
+      - music
+    date: '2026-06-28'
   - title: TensorFlow playgroud
     url: 'https://playground.tensorflow.org'
     description: Play with small neural networks and see what each neuron learns
