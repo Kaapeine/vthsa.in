@@ -45,7 +45,7 @@ const LINE_FS = `
 precision mediump float;
 varying vec3 v_color;
 void main() {
-  gl_FragColor = vec4(v_color, 0.45);
+  gl_FragColor = vec4(v_color, 0.7);
 }`;
 
 function compile(gl: WebGLRenderingContext, type: number, src: string): WebGLShader {
@@ -117,6 +117,7 @@ export function createDeclutterLayer(
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
       if (source.lineVertCount > 0) {
+        gl.lineWidth(2);
         gl.useProgram(lineProg);
         gl.uniform2f(lineRes, w, h);
         gl.uniform1f(lineDpr, dpr);

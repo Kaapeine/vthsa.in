@@ -28,13 +28,13 @@ export interface SimConfig {
 }
 
 export const DEFAULT_CONFIG: SimConfig = {
-  minRadius: 5,
-  maxRadius: 19,
+  minRadius: 8,
+  maxRadius: 10,
   neighborRadius: 48,
-  anchorStiffness: 0.1,
-  damping: 0.8,
-  relaxationPasses: 4,
-  leaderHideThreshold: 4,
+  anchorStiffness: 0.06,
+  damping: 0.65,
+  relaxationPasses: 30,
+  leaderHideThreshold: 2,
   stabilityThreshold: 0.15,
 };
 

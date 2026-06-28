@@ -15,6 +15,7 @@ export class DeclutterController {
   private active: Place[] = [];
   private rafId = 0;
   private mapMoving = false;
+  private prevZoomLevel = -1;
   readonly source: RenderSource;
 
   constructor(map: MlMap, places: Place[], cfg: SimConfig = DEFAULT_CONFIG) {
@@ -56,7 +57,10 @@ export class DeclutterController {
 
   private onMove(): void {
     this.active = cullToBBox(this.places, this.viewportBBox());
-    this.sim.setAnchors(this.projectAnchors());
+    const zoomLevel = Math.floor(this.map.getZoom());
+    const reset = zoomLevel !== this.prevZoomLevel;
+    if (reset) this.prevZoomLevel = zoomLevel;
+    this.sim.setAnchors(this.projectAnchors(), reset);
     this.kick();
   }
 
@@ -78,7 +82,14 @@ export class DeclutterController {
     if (this.mapMoving) {
       this.sim.setAnchors(this.projectAnchors());
     }
-    const moving = this.sim.tick();
+    // Run as many ticks as fit in an 8ms budget so convergence is fast
+    // without blocking the render thread.
+    const deadline = performance.now() + 8;
+    let moving = false;
+    do {
+      moving = this.sim.tick();
+    } while (moving && !this.mapMoving && performance.now() < deadline);
+
     this.buildBuffers();
     this.map.triggerRepaint();
 
@@ -102,6 +113,11 @@ export class DeclutterController {
     let li = 0;
     const hide = this.cfg.leaderHideThreshold;
 
+    // Clamp rendered displacement by zoom so leader lines stay short at country
+    // zoom and only elongate as you zoom into a city.
+    const zoom = this.map.getZoom();
+    const maxDisp = Math.pow(2, zoom - 6) * 30;
+
     const corners: [number, number][] = [
       [-1, -1], [1, -1], [1, 1],
       [-1, -1], [1, 1], [-1, 1],
@@ -110,19 +126,28 @@ export class DeclutterController {
     for (const p of pins) {
       const [r, g, b] = this.colorById.get(p.id) ?? [1, 1, 1];
       const rad = p.radius;
+
+      // Render position: simulation displacement capped to maxDisp.
+      let rx = p.dx, ry = p.dy;
+      const dd = Math.hypot(p.dx - p.x, p.dy - p.y);
+      if (dd > maxDisp) {
+        rx = p.x + (p.dx - p.x) / dd * maxDisp;
+        ry = p.y + (p.dy - p.y) / dd * maxDisp;
+      }
+
       for (const [lx, ly] of corners) {
-        pv[pi++] = p.dx + lx * rad;
-        pv[pi++] = p.dy + ly * rad;
+        pv[pi++] = rx + lx * rad;
+        pv[pi++] = ry + ly * rad;
         pv[pi++] = lx;
         pv[pi++] = ly;
         pv[pi++] = r;
         pv[pi++] = g;
         pv[pi++] = b;
       }
-      const disp = Math.hypot(p.dx - p.x, p.dy - p.y);
+      const disp = Math.hypot(rx - p.x, ry - p.y);
       if (disp > hide) {
-        lv[li++] = p.x;  lv[li++] = p.y;  lv[li++] = r; lv[li++] = g; lv[li++] = b;
-        lv[li++] = p.dx; lv[li++] = p.dy; lv[li++] = r; lv[li++] = g; lv[li++] = b;
+        lv[li++] = p.x; lv[li++] = p.y; lv[li++] = 0; lv[li++] = 0; lv[li++] = 0;
+        lv[li++] = rx;  lv[li++] = ry;  lv[li++] = 0; lv[li++] = 0; lv[li++] = 0;
       }
     }
     this.source.pinVertCount = n * 6;

@@ -8,8 +8,8 @@ describe('crowdingFactor', () => {
   it('is 0 when there are no neighbors', () => {
     expect(crowdingFactor(0, cfg)).toBe(0);
   });
-  it('reaches ~1 at capacity = (neighborRadius/minRadius)^2', () => {
-    const capacity = (cfg.neighborRadius / cfg.minRadius) ** 2;
+  it('reaches ~1 at capacity = (neighborRadius/maxRadius)^2', () => {
+    const capacity = (cfg.neighborRadius / cfg.maxRadius) ** 2;
     expect(crowdingFactor(capacity, cfg)).toBeCloseTo(1, 5);
   });
   it('increases monotonically with neighbor count', () => {

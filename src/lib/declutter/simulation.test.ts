@@ -19,7 +19,7 @@ describe('Simulation', () => {
     settle(sim);
     const [a, b] = sim.getPins();
     const dist = Math.hypot(a.dx - b.dx, a.dy - b.dy);
-    expect(dist).toBeGreaterThan(20);
+    expect(dist).toBeGreaterThan(DEFAULT_CONFIG.maxRadius);
     expect(dist).toBeLessThanOrEqual(2 * DEFAULT_CONFIG.maxRadius + 0.5);
   });
 
@@ -53,8 +53,9 @@ describe('Simulation', () => {
   });
 
   it('picks the nearest pin within its radius, else null', () => {
-    const sim = new Simulation(DEFAULT_CONFIG);
+    const sim = new Simulation({ ...DEFAULT_CONFIG, stabilityThreshold: 0.001 });
     sim.setAnchors([{ id: 7, x: 200, y: 200 }]);
+    settle(sim);
     expect(sim.pick(202, 201)).toBe(7);
     expect(sim.pick(400, 400)).toBeNull();
   });

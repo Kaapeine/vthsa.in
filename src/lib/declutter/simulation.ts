@@ -1,7 +1,7 @@
 import { quadtree } from 'd3-quadtree';
 import type { Anchor, SimConfig, SimPin } from './types';
 import { crowdingFactor, radiusForCrowding, permittedOverlap } from './crowding';
-import { visitWithin } from './quadtree';
+import { visitWithin, visitWithinXY } from './quadtree';
 
 export class Simulation {
   private cfg: SimConfig;
@@ -12,22 +12,36 @@ export class Simulation {
     this.cfg = cfg;
   }
 
-  setAnchors(anchors: Anchor[]): void {
+  setAnchors(anchors: Anchor[], reset = false): void {
     const seen = new Set<number>();
     for (const a of anchors) {
       seen.add(a.id);
       const existing = this.pins.get(a.id);
-      if (existing) {
+      if (existing && !reset) {
+        const ddx = a.x - existing.x;
+        const ddy = a.y - existing.y;
         existing.x = a.x;
         existing.y = a.y;
+        existing.dx += ddx;
+        existing.dy += ddy;
+        existing.vx = 0;
+        existing.vy = 0;
+      } else if (existing && reset) {
+        existing.x = a.x;
+        existing.y = a.y;
+        const theta = (a.id * 2.399963229) % (2 * Math.PI);
+        existing.dx = a.x + Math.cos(theta);
+        existing.dy = a.y + Math.sin(theta);
+        existing.vx = 0;
+        existing.vy = 0;
       } else {
-        const jitter = a.id % 2 === 0 ? 0.5 : -0.5;
+        const theta = (a.id * 2.399963229) % (2 * Math.PI);
         this.pins.set(a.id, {
           id: a.id,
           x: a.x,
           y: a.y,
-          dx: a.x + jitter,
-          dy: a.y,
+          dx: a.x + Math.cos(theta),
+          dy: a.y + Math.sin(theta),
           vx: 0,
           vy: 0,
           radius: this.cfg.maxRadius,
@@ -51,10 +65,13 @@ export class Simulation {
     const cfg = this.cfg;
 
     // 1. Density → radius + permitted overlap.
+    // Measured on anchor positions so crowding reflects geographic density,
+    // not how far relaxation has spread the displaced pins.
+    const anchorTree = quadtree<SimPin>().x((p) => p.x).y((p) => p.y).addAll(pins);
     let tree = quadtree<SimPin>().x((p) => p.dx).y((p) => p.dy).addAll(pins);
     for (const p of pins) {
       let count = 0;
-      visitWithin(tree, p.dx, p.dy, cfg.neighborRadius, (q) => {
+      visitWithinXY(anchorTree, p.x, p.y, cfg.neighborRadius, (q) => {
         if (q !== p) count++;
       });
       const c = crowdingFactor(count, cfg);
@@ -63,7 +80,7 @@ export class Simulation {
     }
 
     // 2. Collision relaxation — direct push-apart, multiple passes.
-    const searchR = 2 * cfg.maxRadius;
+    const searchR = 3 * cfg.maxRadius;
     for (let pass = 0; pass < cfg.relaxationPasses; pass++) {
       tree = quadtree<SimPin>().x((p) => p.dx).y((p) => p.dy).addAll(pins);
       for (const p of pins) {
@@ -73,7 +90,10 @@ export class Simulation {
           let ddy = q.dy - p.dy;
           let dist = Math.hypot(ddx, ddy);
           if (dist === 0) { ddx = 0.01; dist = 0.01; }
-          const desired = (p.radius + q.radius) * (1 - 0.5 * (p.overlap + q.overlap));
+          const desired = Math.max(
+            (p.radius + q.radius) * (1 - 0.5 * (p.overlap + q.overlap)),
+            2 * cfg.maxRadius,
+          );
           if (dist < desired) {
             const push = (desired - dist) / 2;
             const ux = ddx / dist;

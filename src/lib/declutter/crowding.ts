@@ -5,7 +5,7 @@ function clamp01(v: number): number {
 }
 
 export function crowdingFactor(neighborCount: number, cfg: SimConfig): number {
-  const capacity = (cfg.neighborRadius / cfg.minRadius) ** 2;
+  const capacity = (cfg.neighborRadius / cfg.maxRadius) ** 2;
   return neighborCount / capacity;
 }
 
