@@ -1,5 +1,14 @@
 ---
 links:
+  - title: The machines are fine
+    url: 'https://ergosphere.blog/posts/the-machines-are-fine/'
+    description: >-
+      Interesting blog post about something I keep thinking about - is AI
+      reducing friction for so many tasks, including learing, a good thing?
+    tags:
+      - ai
+      - blog
+    date: '2026-06-30'
   - title: Logical Progression vol. 1
     url: >-
       https://music.youtube.com/playlist?list=OLAK5uy_mKFxU37sGaxRsopEEd005zMA37xj3BKDI&si=8c-2VdwuF3LmRaHj
