@@ -13,27 +13,31 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <tbody>
           <tr>
             <td class="label">Programming Languages</td>
-            <td>HTML, CSS, JavaScript, TypeScript, Go</td>
+            <td>Python, TypeScript, JavaScript, Go, C++</td>
           </tr>
           <tr>
             <td class="label">Frontend</td>
-            <td>Next.js, React.js, Redux</td>
+            <td>React.js, Next.js, Redux, Webpack, Web Audio API</td>
           </tr>
           <tr>
             <td class="label">CSS & UI Libraries</td>
-            <td>Material Design, Tailwind CSS, Chakra UI, SASS</td>
+            <td>Tailwind CSS, Chakra UI, Material Design, SASS</td>
           </tr>
           <tr>
             <td class="label">Backend</td>
-            <td>Node.js, Express.js, REST APIs, Microservices, net/http, Docker</td>
-          </tr>
-          <tr>
-            <td class="label">Testing</td>
-            <td>Jest, Cypress</td>
+            <td>FastAPI, Node.js, Express.js, REST API Design, WebSockets, Microservices</td>
           </tr>
           <tr>
             <td class="label">Databases</td>
-            <td>MongoDB</td>
+            <td>PostgreSQL, MongoDB, SQLite</td>
+          </tr>
+          <tr>
+            <td class="label">Infra & Tools</td>
+            <td>Docker, Linux, AWS (EC2, S3), Cloudflare R2, Railway, GitHub Actions</td>
+          </tr>
+          <tr>
+            <td class="label">Testing</td>
+            <td>Jest, Cypress, Vitest, pytest</td>
           </tr>
           <tr>
             <td class="label">SDLC</td>
@@ -49,8 +53,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <div class="entry">
         <div class="entry-header">
           <div>
-            <h3>Solvendo</h3>
-            <span class="role">Full Stack Software Engineer</span>
+            <h3>Solvendo <span class="org-desc">— Legal-tech startup</span></h3>
+            <span class="role">Software Engineer</span>
           </div>
           <div class="meta">
             <span>Bengaluru, KA</span>
@@ -58,12 +62,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </div>
         <ul>
-          <li>Worked on an application that streamlined the Indian bankruptcy process for banks, companies, and lawyers, used by institutions such as Canara Bank.</li>
-          <li>Worked on micro-frontend architecture, user authentication, and configuration management. <span class="tech">React, Webpack, JavaScript, JWT</span></li>
-          <li>Bootstrapped a new Next.js frontend project for a bankruptcy process with standard coding practices and created standardized, reusable components, reducing dev time by 30%. <span class="tech">Next.js, Chakra UI, NextAuth.js</span></li>
-          <li>Built a high-performance dashboard for a blockchain analytics platform with interactive charts for time series data and a drag-and-drop interface. 10k MAU at peak, loaded in under 2 seconds, Lighthouse score of 93. <span class="tech">Next.js, React-DND, ApexCharts</span></li>
-          <li>Used React DevTools and Lighthouse to diagnose and optimize performance, reducing FCP by 50%.</li>
-          <li>Built a blockchain data processing microservice in Golang aggregating data from WebSockets with REST API endpoints, achieving 8x higher throughput than the previous solution. <span class="tech">net/http, REST APIs, WebSockets</span></li>
+          <li>Built and shipped frontend features for a bankruptcy resolution platform used by institutions including Canara Bank and IBBI, handling complex multi-role workflows across banks, companies, and legal teams.</li>
+          <li>Bootstrapped a new Next.js frontend from scratch, establishing coding standards and a reusable component library that the team built features on top of. <span class="tech">Next.js, Chakra UI, NextAuth.js</span></li>
+          <li>Built a high-performance blockchain analytics dashboard with rich interactive time-series charts and a drag-and-drop analysis interface — sub-2s load time and a Lighthouse score of 93 at 10k MAU. <span class="tech">Next.js, React-DND, ApexCharts</span></li>
+          <li>Diagnosed and resolved React performance bottlenecks using React DevTools and Lighthouse, cutting First Contentful Paint by 50%.</li>
+          <li>Built a blockchain data aggregation microservice in Go using WebSockets and REST endpoints, achieving 8x higher throughput than the previous solution. <span class="tech">Go, net/http, WebSockets</span></li>
         </ul>
       </div>
 
@@ -71,7 +74,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="entry-header">
           <div>
             <h3>Indian Institute of Science</h3>
-            <span class="role">Research Intern</span>
+            <span class="role">Research Engineer</span>
           </div>
           <div class="meta">
             <span>Bengaluru, KA</span>
@@ -80,7 +83,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </div>
         <ul>
           <li>Engineered multi-agent robot systems for agricultural applications, achieving 2x improvement in obstacle avoidance performance through novel algorithms. <span class="tech">Python, ROS, EGO Planner</span></li>
-          <li>Developed motion planning algorithms and perception software for UAVs. <span class="tech">ROS, Intel Realsense cameras, 2D Lidars</span></li>
+          <li>Developed motion planning and perception software for UAVs in Python. <span class="tech">ROS, Intel Realsense cameras, 2D Lidars</span></li>
           <li>Integrated UAVs with DJI control software using SDKs to enhance automation capabilities. <span class="tech">Python, DJI SDK</span></li>
         </ul>
       </div>
@@ -88,7 +91,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <div class="entry">
         <div class="entry-header">
           <div>
-            <h3>NewSpace Research & Technologies</h3>
+            <h3>NewSpace Research & Technologies <span class="org-desc">— UAV & robotics R&D company</span></h3>
             <span class="role">Robotics Engineer</span>
           </div>
           <div class="meta">
@@ -98,9 +101,40 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </div>
         <ul>
           <li>Worked on ROS-based autonomy software for UAVs operating in GPS-denied environments. <span class="tech">ROS, Python, Linux, C++</span></li>
-          <li>Optimized robot localization using visual SLAM and LiDAR SLAM algorithms. <span class="tech">OpenCV, OpenSLAM, VINS-Stereo/Mono, Ouster Lidars</span></li>
+          <li>Optimized robot localization using visual SLAM and LiDAR SLAM algorithms in C++. <span class="tech">OpenCV, OpenSLAM, VINS-Stereo/Mono, Ouster Lidars</span></li>
           <li>Developed UAV simulation tools using Python and physics simulation software. <span class="tech">Python, Gazebo, Docker, C++</span></li>
         </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>Projects</h2>
+
+      <div class="entry">
+        <div class="entry-header">
+          <div>
+            <h3>CoheMix</h3>
+          </div>
+        </div>
+        <p class="project-desc">A mix comparison tool for audio engineers. Validates and processes uploaded audio server-side using ffprobe and threaded analysis, gain-matches tracks via integrated LUFS, and computes loudness, frequency, and spatial features. Frontend renders results through meters and graphs, as well as a live spectrum and goniometer via the Web Audio API. <span class="tech">Python, FastAPI, React, TypeScript, PostgreSQL, Cloudflare R2, Railway</span></p>
+      </div>
+
+      <div class="entry">
+        <div class="entry-header">
+          <div>
+            <h3>BarFly Browser Extension</h3>
+          </div>
+        </div>
+        <p class="project-desc">A browser extension that replaces the bookmarks toolbar with an LRU-cached view of recently interacted bookmarks, keeping the most relevant links always accessible. <a href="https://addons.mozilla.org/en-US/firefox/addon/barfly/" target="_blank" rel="noopener noreferrer">Firefox store page</a>. <span class="tech">TypeScript, Firefox/Chrome Browser Extensions API</span></p>
+      </div>
+
+      <div class="entry">
+        <div class="entry-header">
+          <div>
+            <h3>WikiTree Browser Extension</h3>
+          </div>
+        </div>
+        <p class="project-desc">A Chrome extension to visualize Wikipedia rabbit holes as interactive trees, built using TypeScript and React. <a href="https://chromewebstore.google.com/detail/wikitree/gmepfbiaaamedihnliggicgbphigbcje?hl=en&pli=1" target="_blank" rel="noopener noreferrer">Chrome store page</a>. <span class="tech">TypeScript, React.js, Chrome Browser Extensions API</span></p>
       </div>
     </section>
 
@@ -110,7 +144,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="entry-header">
           <div>
             <h3>BMS College of Engineering</h3>
-            <span class="role">B.E. in Mechanical Engineering</span>
+            <span class="role">Degree in Mechanical Engineering (BE)</span>
           </div>
           <div class="meta">
             <span>Bengaluru, KA</span>
@@ -119,6 +153,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </div>
         <p class="edu-detail">Electives: AI, Java, Robotics &nbsp;·&nbsp; GPA: 8.75</p>
       </div>
+    </section>
+
+    <section>
+      <h2>Publications</h2>
+      <p class="publication">Kumar Ankit, Shrivathsa M S, Shishir Kolathaya, Debasish Ghose. "Reachability Analysis of UAVs through Cluttered Environments." <em>AIAA SciTech 2024 Forum</em>, January 2024. <a href="https://doi.org/10.2514/6.2024-2017" target="_blank" rel="noopener noreferrer">DOI: 10.2514/6.2024-2017</a></p>
     </section>
 
   </div>
@@ -163,6 +202,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   h3 {
     font-size: 1rem;
     margin: 0;
+  }
+
+  .org-desc {
+    font-size: 0.8rem;
+    font-weight: 400;
+    opacity: 0.55;
   }
 
   .entry {
@@ -237,6 +282,24 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     font-size: 0.85rem;
     opacity: 0.65;
     margin: 0.25rem 0 0 0;
+  }
+
+  .project-desc,
+  .publication {
+    font-size: 0.9rem;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .project-desc a,
+  .publication a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .project-desc a:hover,
+  .publication a:hover {
+    text-decoration: underline 2px var(--accent);
+    text-underline-offset: 3px;
   }
 
   @media (max-width: 560px) {
