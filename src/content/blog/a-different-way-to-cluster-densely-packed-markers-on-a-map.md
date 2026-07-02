@@ -20,7 +20,7 @@ But zooming out even further, I started to see some issues. The leader lines i.e
 
 The spacing works best for medium level zoom scenarios, and I think it's a good compromise. At city level zoom, all markers are visible roughly close to their true locations and they don't have to be hidden behind a grouped cluster marker.
 
-Here's what it looks like in action (sped up 3x):
+Here's what it looks like in action:
 
 <video src="/declutter-demo.mp4" autoplay muted loop playsinline controls style="width:100%;height:auto;border-radius:8px;"></video>
 
