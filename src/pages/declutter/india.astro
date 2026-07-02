@@ -1,0 +1,203 @@
+---
+import { SITE_TITLE } from '../../consts';
+import '../../styles/global.css';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Declutter Demo (India) · {SITE_TITLE}</title>
+  </head>
+  <body>
+    <header class="map-header">
+      <div class="site-link">
+        <a href="/">{SITE_TITLE}</a>
+        <span class="sep">/</span>
+        <span>Declutter</span>
+        <span class="sep">/</span>
+        <span>India</span>
+      </div>
+      <div class="controls">
+        <a href="/declutter/global" class="switch">Global →</a>
+        <span id="status" class="status">loading…</span>
+      </div>
+    </header>
+
+    <div id="map"></div>
+
+    <div id="tag-backdrop" hidden></div>
+    <div id="tag-modal" hidden>
+      <button id="modal-close" type="button" aria-label="Close">✕</button>
+      <div id="modal-body">
+        <strong id="modal-title"></strong>
+        <div id="modal-meta-row">
+          <span id="modal-meta"></span>
+          <span id="modal-coords"></span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      import maplibregl from 'maplibre-gl';
+      import 'maplibre-gl/dist/maplibre-gl.css';
+      import { loadPlaces } from '../../lib/declutter/data';
+      import { createDeclutterLayer } from '../../lib/declutter/webgl-layer';
+      import { DeclutterController } from '../../lib/declutter/controller';
+
+      const status = document.getElementById('status')!;
+      const backdrop = document.getElementById('tag-backdrop')!;
+      const modal = document.getElementById('tag-modal')!;
+      const modalTitle = document.getElementById('modal-title')!;
+      const modalMeta = document.getElementById('modal-meta')!;
+      const modalCoords = document.getElementById('modal-coords')!;
+
+      function closeModal() {
+        backdrop.hidden = true;
+        modal.hidden = true;
+      }
+      document.getElementById('modal-close')!.addEventListener('click', closeModal);
+      backdrop.addEventListener('click', closeModal);
+
+      const map = new maplibregl.Map({
+        container: 'map',
+        style: 'https://tiles.openfreemap.org/styles/liberty',
+        center: [78.96, 22.59],
+        zoom: 4,
+        attributionControl: { compact: true },
+      });
+      map.addControl(new maplibregl.NavigationControl(), 'top-left');
+
+      map.on('load', async () => {
+        try {
+          const places = await loadPlaces('/data/atlas-obscura-india.fgb');
+          const controller = new DeclutterController(map, places, undefined, (t) => {
+            status.textContent = t;
+          });
+          const layer = createDeclutterLayer('declutter', controller.source);
+          map.addLayer(layer);
+
+          map.on('click', (e) => {
+            const hit = controller.pick(e.point.x, e.point.y);
+            if (!hit) { closeModal(); return; }
+            modalTitle.textContent = hit.name;
+            modalMeta.textContent = hit.category;
+            modalCoords.textContent = `${hit.lat.toFixed(4)}, ${hit.lng.toFixed(4)}`;
+            backdrop.hidden = false;
+            modal.hidden = false;
+          });
+
+          map.on('mousemove', (e) => {
+            map.getCanvas().style.cursor = controller.pick(e.point.x, e.point.y) ? 'pointer' : '';
+          });
+        } catch (err) {
+          status.textContent = 'failed to load dataset';
+          console.error(err);
+        }
+      });
+    </script>
+
+    <style is:global>
+      #tag-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        background: rgba(0, 0, 0, 0.4);
+      }
+      #tag-backdrop[hidden],
+      #tag-modal[hidden] {
+        display: none !important;
+      }
+      #tag-modal {
+        position: fixed;
+        z-index: 2001;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90vw;
+        max-width: 520px;
+        background: #fff;
+        color: #111;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        font-family: 'Space Mono', monospace;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+      }
+      #modal-close {
+        position: absolute;
+        top: 0.6rem;
+        right: 0.75rem;
+        background: rgba(0, 0, 0, 0.08);
+        color: #111;
+        border: none;
+        border-radius: 50%;
+        width: 2rem;
+        height: 2rem;
+        font-size: 0.75rem;
+        cursor: pointer;
+      }
+      #modal-body {
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      #modal-title { font-size: 1rem; color: #111; }
+      #modal-meta-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+      #modal-meta { font-size: 0.75rem; color: #666; }
+      #modal-coords {
+        font-size: 0.72rem;
+        color: #999;
+        font-variant-numeric: tabular-nums;
+      }
+    </style>
+
+    <style>
+      body { margin: 0; padding: 0; overflow: hidden; }
+      .map-header {
+        position: fixed;
+        top: 0.6rem;
+        right: 1rem;
+        width: calc(100% - 4.5rem);
+        max-width: 900px;
+        z-index: 1000;
+        height: 3rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 1.25rem;
+        background: rgba(0, 0, 0, 0.92);
+        border: 1px solid #222;
+        border-radius: 8px;
+        box-sizing: border-box;
+      }
+      @media (min-width: 918px) {
+        .map-header {
+          right: calc((100vw - 900px) / 2);
+          width: 900px;
+        }
+      }
+      .site-link {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        letter-spacing: 0.04em;
+      }
+      .site-link a { color: #eee; text-decoration: none; }
+      .site-link a:hover { color: var(--accent); }
+      .sep { color: #555; }
+      .controls { display: flex; align-items: center; gap: 0.75rem; }
+      .switch { color: #eee; text-decoration: none; font-size: 0.78rem; }
+      .switch:hover { color: var(--accent); }
+      .status { font-size: 0.78rem; color: #888; }
+      #map { height: 100vh; width: 100%; z-index: 1; }
+    </style>
+  </body>
+</html>

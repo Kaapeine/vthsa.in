@@ -16,12 +16,20 @@ export class DeclutterController {
   private rafId = 0;
   private mapMoving = false;
   private prevZoomLevel = -1;
+  private gated = false;
+  private onStatus?: (text: string) => void;
   readonly source: RenderSource;
 
-  constructor(map: MlMap, places: Place[], cfg: SimConfig = DEFAULT_CONFIG) {
+  constructor(
+    map: MlMap,
+    places: Place[],
+    cfg: SimConfig = DEFAULT_CONFIG,
+    onStatus?: (text: string) => void,
+  ) {
     this.map = map;
     this.places = places;
     this.cfg = cfg;
+    this.onStatus = onStatus;
     this.sim = new Simulation(cfg);
     for (const p of places) {
       this.byId.set(p.id, p);
@@ -57,11 +65,21 @@ export class DeclutterController {
 
   private onMove(): void {
     this.active = cullToBBox(this.places, this.viewportBBox());
+    this.gated = this.active.length > this.cfg.simMaxPins;
+    this.updateStatus();
     const zoomLevel = Math.floor(this.map.getZoom());
     const reset = zoomLevel !== this.prevZoomLevel;
     if (reset) this.prevZoomLevel = zoomLevel;
     this.sim.setAnchors(this.projectAnchors(), reset);
     this.kick();
+  }
+
+  private updateStatus(): void {
+    if (!this.onStatus) return;
+    const total = this.places.length.toLocaleString();
+    this.onStatus(
+      this.gated ? `${total} places · zoom in to declutter` : `${total} places`,
+    );
   }
 
   private projectAnchors(): Anchor[] {
@@ -82,13 +100,20 @@ export class DeclutterController {
     if (this.mapMoving) {
       this.sim.setAnchors(this.projectAnchors());
     }
-    // Run as many ticks as fit in an 8ms budget so convergence is fast
-    // without blocking the render thread.
-    const deadline = performance.now() + 8;
+
     let moving = false;
-    do {
-      moving = this.sim.tick();
-    } while (moving && !this.mapMoving && performance.now() < deadline);
+    if (this.gated) {
+      // Too many pins in view to declutter meaningfully — collapse onto
+      // anchors and render a static point cloud instead of running physics.
+      this.sim.snapToAnchors();
+    } else {
+      // Run as many ticks as fit in an 8ms budget so convergence is fast
+      // without blocking the render thread.
+      const deadline = performance.now() + 8;
+      do {
+        moving = this.sim.tick();
+      } while (moving && !this.mapMoving && performance.now() < deadline);
+    }
 
     this.buildBuffers();
     this.map.triggerRepaint();

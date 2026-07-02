@@ -59,6 +59,20 @@ export class Simulation {
     return this.list;
   }
 
+  /** Collapse every pin onto its anchor with no velocity — used when the
+   * in-view count exceeds simMaxPins and decluttering is skipped. Returns
+   * false so the render loop can idle instead of churning. */
+  snapToAnchors(): boolean {
+    for (const p of this.list) {
+      p.dx = p.x;
+      p.dy = p.y;
+      p.vx = 0;
+      p.vy = 0;
+      p.radius = this.cfg.maxRadius;
+    }
+    return false;
+  }
+
   tick(): boolean {
     const pins = this.list;
     if (pins.length === 0) return false;
@@ -68,7 +82,6 @@ export class Simulation {
     // Measured on anchor positions so crowding reflects geographic density,
     // not how far relaxation has spread the displaced pins.
     const anchorTree = quadtree<SimPin>().x((p) => p.x).y((p) => p.y).addAll(pins);
-    let tree = quadtree<SimPin>().x((p) => p.dx).y((p) => p.dy).addAll(pins);
     for (const p of pins) {
       let count = 0;
       visitWithinXY(anchorTree, p.x, p.y, cfg.neighborRadius, (q) => {
@@ -82,7 +95,7 @@ export class Simulation {
     // 2. Collision relaxation — direct push-apart, multiple passes.
     const searchR = 3 * cfg.maxRadius;
     for (let pass = 0; pass < cfg.relaxationPasses; pass++) {
-      tree = quadtree<SimPin>().x((p) => p.dx).y((p) => p.dy).addAll(pins);
+      const tree = quadtree<SimPin>().x((p) => p.dx).y((p) => p.dy).addAll(pins);
       for (const p of pins) {
         visitWithin(tree, p.dx, p.dy, searchR, (q) => {
           if (q.id <= p.id) return;

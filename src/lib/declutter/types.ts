@@ -25,6 +25,9 @@ export interface SimConfig {
   relaxationPasses: number;
   leaderHideThreshold: number;
   stabilityThreshold: number;
+  /** Above this many pins in view, decluttering is infeasible on one screen —
+   * skip the physics and render pins at their anchor positions. */
+  simMaxPins: number;
 }
 
 export const DEFAULT_CONFIG: SimConfig = {
@@ -36,6 +39,7 @@ export const DEFAULT_CONFIG: SimConfig = {
   relaxationPasses: 30,
   leaderHideThreshold: 2,
   stabilityThreshold: 0.15,
+  simMaxPins: 1500,
 };
 
 export interface Place {

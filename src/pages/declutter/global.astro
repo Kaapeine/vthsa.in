@@ -1,6 +1,6 @@
 ---
-import { SITE_TITLE } from '../consts';
-import '../styles/global.css';
+import { SITE_TITLE } from '../../consts';
+import '../../styles/global.css';
 ---
 
 <!doctype html>
@@ -8,16 +8,19 @@ import '../styles/global.css';
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Declutter Demo · {SITE_TITLE}</title>
+    <title>Declutter Demo (Global) · {SITE_TITLE}</title>
   </head>
   <body>
     <header class="map-header">
       <div class="site-link">
         <a href="/">{SITE_TITLE}</a>
         <span class="sep">/</span>
-        <a href="/declutter">Declutter</a>
+        <span>Declutter</span>
+        <span class="sep">/</span>
+        <span>Global</span>
       </div>
       <div class="controls">
+        <a href="/declutter/india" class="switch">India →</a>
         <span id="status" class="status">loading…</span>
       </div>
     </header>
@@ -39,9 +42,9 @@ import '../styles/global.css';
     <script>
       import maplibregl from 'maplibre-gl';
       import 'maplibre-gl/dist/maplibre-gl.css';
-      import { loadPlaces } from '../lib/declutter/data';
-      import { createDeclutterLayer } from '../lib/declutter/webgl-layer';
-      import { DeclutterController } from '../lib/declutter/controller';
+      import { loadPlaces } from '../../lib/declutter/data';
+      import { createDeclutterLayer } from '../../lib/declutter/webgl-layer';
+      import { DeclutterController } from '../../lib/declutter/controller';
 
       const status = document.getElementById('status')!;
       const backdrop = document.getElementById('tag-backdrop')!;
@@ -60,17 +63,18 @@ import '../styles/global.css';
       const map = new maplibregl.Map({
         container: 'map',
         style: 'https://tiles.openfreemap.org/styles/liberty',
-        center: [78.96, 22.59],
-        zoom: 4,
+        center: [10, 20],
+        zoom: 1.5,
         attributionControl: { compact: true },
       });
       map.addControl(new maplibregl.NavigationControl(), 'top-left');
 
       map.on('load', async () => {
         try {
-          const places = await loadPlaces('/data/atlas-obscura-india.fgb');
-          status.textContent = `${places.length.toLocaleString()} places`;
-          const controller = new DeclutterController(map, places);
+          const places = await loadPlaces('/data/atlasobscura.fgb');
+          const controller = new DeclutterController(map, places, undefined, (t) => {
+            status.textContent = t;
+          });
           const layer = createDeclutterLayer('declutter', controller.source);
           map.addLayer(layer);
 
@@ -189,6 +193,9 @@ import '../styles/global.css';
       .site-link a { color: #eee; text-decoration: none; }
       .site-link a:hover { color: var(--accent); }
       .sep { color: #555; }
+      .controls { display: flex; align-items: center; gap: 0.75rem; }
+      .switch { color: #eee; text-decoration: none; font-size: 0.78rem; }
+      .switch:hover { color: var(--accent); }
       .status { font-size: 0.78rem; color: #888; }
       #map { height: 100vh; width: 100%; z-index: 1; }
     </style>
