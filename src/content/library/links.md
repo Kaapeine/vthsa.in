@@ -1,5 +1,11 @@
 ---
 links:
+  - title: A Digital Media Primer For Geeks
+    url: 'https://youtu.be/FG9jemV1T7I?si=Ia84lGWszL6Kve2D'
+    description: How audio and video is represented digitally
+    tags:
+      - audio
+    date: '2026-07-02'
   - title: The machines are fine
     url: 'https://ergosphere.blog/posts/the-machines-are-fine/'
     description: >-
