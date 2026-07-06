@@ -2,10 +2,11 @@
 title: Some thoughts on coding after AI
 pubDate: '2026-06-12'
 description: Work and creativity in the AI age
-updatedDate: '2026-06-14'
+updatedDate: '2026-07-06'
 tags:
   - writing
   - ai
+draft: true
 ---
 I'm constantly thinking about the future of work, like nearly everyone these days. AI seems like it's capable of automating a vast amount of white collar work, especially the kind of work that amounts to intellectual manual labour.
 
