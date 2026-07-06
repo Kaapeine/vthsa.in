@@ -32,6 +32,29 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
   </article>
 </BaseLayout>
 
+<script>
+  // Embedded videos occasionally fail to decode on the first attempt (a
+  // transient network hiccup during autoplay, not an actually corrupt file —
+  // reloading the page always fixes it). Retry in place instead of making
+  // the reader reload.
+  document.addEventListener('astro:page-load', () => {
+    document
+      .querySelectorAll<HTMLVideoElement>('.prose video:not([data-retry-wired])')
+      .forEach((video) => {
+        video.dataset.retryWired = 'true';
+        let attempts = 0;
+        video.addEventListener('error', () => {
+          if (attempts >= 3) return;
+          attempts++;
+          setTimeout(() => {
+            video.load();
+            if (video.autoplay) video.play().catch(() => {});
+          }, 500 * attempts);
+        });
+      });
+  });
+</script>
+
 <style>
   .hero-image img {
     display: block;
