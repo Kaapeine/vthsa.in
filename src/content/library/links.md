@@ -1,5 +1,12 @@
 ---
 links:
+  - title: The lost joy of music piracy
+    url: >-
+      https://www.pigeonsandplanes.com/read/music-piracy-what-cd-oink-nine-inch-nails-streaming
+    description: On early music piracy and private trackers
+    tags:
+      - blog
+    date: '2026-07-16'
   - title: A Digital Media Primer For Geeks
     url: 'https://youtu.be/FG9jemV1T7I?si=Ia84lGWszL6Kve2D'
     description: How audio and video is represented digitally
