@@ -33,10 +33,20 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 </BaseLayout>
 
 <script>
-  // Embedded videos occasionally fail to decode on the first attempt (a
-  // transient network hiccup during autoplay, not an actually corrupt file —
-  // reloading the page always fixes it). Retry in place instead of making
-  // the reader reload.
+  // ClientRouter navigation parses the next page with DOMParser and moves its
+  // <body> into the live document. <video> elements created in that inert
+  // document don't reliably start loading/autoplaying once adopted, so the
+  // video sits blank until a full reload. Kick the media load explicitly after
+  // every soft swap (astro:after-swap doesn't fire on a full page load, where
+  // the browser already handles this).
+  document.addEventListener('astro:after-swap', () => {
+    document.querySelectorAll<HTMLVideoElement>('.prose video').forEach((video) => {
+      video.load();
+      if (video.autoplay) video.play().catch(() => {});
+    });
+  });
+
+  // Separately, retry in place if a video does fire a load/decode error.
   document.addEventListener('astro:page-load', () => {
     document
       .querySelectorAll<HTMLVideoElement>('.prose video:not([data-retry-wired])')
