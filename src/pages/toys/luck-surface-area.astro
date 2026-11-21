@@ -1,0 +1,717 @@
+---
+import ToyLayout from '../../layouts/ToyLayout.astro';
+---
+
+<ToyLayout
+  toyName="Luck Surface Area"
+  description="A Monte Carlo explorable of how taking small chances compounds over a lifetime."
+  align="top"
+>
+  <div class="lsa">
+    <header class="lsa-head">
+      <h1>Luck Surface Area</h1>
+      <p class="lede">
+        Each simulated life takes small chances every week, such as talking to a stranger, sending a cold email, or
+        showing up to the odd event. Most go nowhere. A few pay off, the payoffs are heavy-tailed, and every hit
+        makes the next one more likely. Move the dials and watch the whole range of outcomes, not just the average.
+      </p>
+    </header>
+
+    <div class="layout">
+      <aside class="controls" aria-label="Model settings">
+        <div class="group first">
+          <h3>You</h3>
+          <div class="presets" role="group" aria-label="Presets">
+            <button type="button" data-preset="cautious">Cautious</button>
+            <button type="button" data-preset="steady">Steady</button>
+            <button type="button" data-preset="reckless">Reckless</button>
+          </div>
+          <div class="ctl">
+            <div class="row"><label for="bold">Chances per week</label><output for="bold" id="bold-o"></output></div>
+            <input type="range" id="bold" min="0" max="15" step="0.5" value="2" />
+            <div class="hint">How often you go out of your way. The number each week is random, with this as the average (a Poisson draw).</div>
+          </div>
+        </div>
+
+        <div class="group">
+          <h3>Odds per attempt</h3>
+          <div class="ctl">
+            <div class="row"><label for="p0">Starting hit rate</label><output for="p0" id="p0-o"></output></div>
+            <input type="range" id="p0" min="0.005" max="0.15" step="0.005" value="0.03" />
+            <div class="hint">Chance that one attempt turns into something, before any skill or reputation.</div>
+          </div>
+          <div class="ctl">
+            <div class="row"><label for="tieRate">Ties per chance</label><output for="tieRate" id="tieRate-o"></output></div>
+            <input type="range" id="tieRate" min="0" max="0.4" step="0.01" value="0.1" />
+            <div class="hint">Chance that an attempt leaves you with a lasting connection. Every hit also adds one.</div>
+          </div>
+          <div class="ctl">
+            <div class="row"><label for="q">Chance of a loss</label><output for="q" id="q-o"></output></div>
+            <input type="range" id="q" min="0" max="0.3" step="0.01" value="0.05" />
+            <div class="hint">A bad deal, wasted time, an awkward fallout.</div>
+          </div>
+        </div>
+
+        <div class="group">
+          <h3>Sizes</h3>
+          <div class="ctl">
+            <div class="row"><label for="alpha">Payoff tail</label><output for="alpha" id="alpha-o"></output></div>
+            <input type="range" id="alpha" min="1.2" max="3" step="0.1" value="1.5" />
+            <div class="hint">Hits are Pareto-distributed with minimum 1. Lower α means a fatter tail: rare hits are enormous. At α = 1.5, one hit in 100 is worth more than 21.</div>
+          </div>
+          <div class="ctl" id="lossSize-ctl">
+            <div class="row"><label for="lossSize">Average loss size</label><output for="lossSize" id="lossSize-o"></output></div>
+            <input type="range" id="lossSize" min="0" max="5" step="0.25" value="1" />
+            <div class="hint">Exponentially distributed, in the same units as a minimum hit.</div>
+          </div>
+          <div class="ctl" id="stake-ctl" hidden>
+            <div class="row"><label for="stake">Stake per chance</label><output for="stake" id="stake-o"></output></div>
+            <input type="range" id="stake" min="0.005" max="0.4" step="0.005" value="0.05" />
+            <div class="hint">Fraction of everything you have that rides on each attempt. A hit multiplies it by 1 + stake × payoff, and a loss takes the stake.</div>
+          </div>
+        </div>
+
+        <div class="group">
+          <h3>Feedback</h3>
+          <div class="ctl">
+            <div class="row"><label for="refRate">Referrals per tie</label><output for="refRate" id="refRate-o"></output></div>
+            <input type="range" id="refRate" min="0" max="0.06" step="0.002" value="0.02" />
+            <div class="hint">Chances each connection sends you per week. Referred chances hit 1.5× as often and cost half the energy.</div>
+          </div>
+          <div class="ctl">
+            <div class="row"><label for="tieHalfLife">Tie half-life</label><output for="tieHalfLife" id="tieHalfLife-o"></output></div>
+            <input type="range" id="tieHalfLife" min="0.5" max="10" step="0.5" value="3" />
+            <div class="hint">How long until half your connections have gone quiet.</div>
+          </div>
+          <div class="ctl">
+            <div class="row"><label for="learn">Learning per hit</label><output for="learn" id="learn-o"></output></div>
+            <input type="range" id="learn" min="0" max="0.2" step="0.01" value="0.05" />
+            <div class="hint">Each hit raises your hit rate by this fraction of the starting rate (skill and reputation). Capped at 30%.</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="bridges" checked /><span>Burnt bridges<small>A loss also costs you a connection and 10% of your accumulated skill.</small></span></label>
+        </div>
+
+        <div class="group">
+          <h3>Rules</h3>
+          <div class="seg" role="group" aria-label="Growth rule">
+            <button type="button" id="mode-add" aria-pressed="true">Additive</button>
+            <button type="button" id="mode-mult" aria-pressed="false">Multiplicative</button>
+          </div>
+          <div class="hint" id="mode-hint"></div>
+          <label class="toggle"><input type="checkbox" id="burnout" checked /><span>Energy and burnout<small>Every attempt drains energy, and a loss drains three times as much. You recover 0.25 a week. Below 0.3 you turn down referrals. At zero you're out for 8 weeks.</small></span></label>
+          <label class="toggle" id="catastrophe-ctl" hidden><input type="checkbox" id="catastrophe" /><span>Rare catastrophe<small>1 in 1,000 attempts wipes out 90% of everything, whatever the stake.</small></span></label>
+        </div>
+
+        <div class="group">
+          <h3>Run</h3>
+          <div class="ctl">
+            <div class="row"><label for="years">Years</label><output for="years" id="years-o"></output></div>
+            <input type="range" id="years" min="2" max="40" step="1" value="20" />
+          </div>
+          <div class="reroll-row">
+            <button type="button" id="reroll">Reroll the dice</button>
+            <span class="status" id="seed-label"></span>
+          </div>
+        </div>
+      </aside>
+
+      <div class="results">
+        <div class="stats" id="stats"></div>
+
+        <section class="chart" aria-labelledby="lives-h">
+          <div class="chart-head">
+            <div class="t"><h2 id="lives-h">How lives unfold</h2><p id="lives-sub"></p></div>
+          </div>
+          <div class="legend">
+            <span><i style="border-color:var(--series-median)"></i>Median</span>
+            <span><i style="border-color:var(--series-mean)"></i>Mean</span>
+            <span><i class="box" style="background:var(--band)"></i>10th–90th percentile</span>
+            <span><i style="border-color:var(--path)"></i>One life</span>
+          </div>
+          <div class="plot" id="lives-plot"><canvas id="lives"></canvas><div class="tip" hidden></div></div>
+        </section>
+
+        <section class="chart" aria-labelledby="sweep-h">
+          <div class="chart-head">
+            <div class="t"><h2 id="sweep-h">Where you end up, by boldness</h2><p>Final outcome after the full span, re-simulated at each level with the same dice. The dashed line marks your current setting.</p></div>
+            <div class="seg" role="group" aria-label="Sweep over" id="sweep-seg" hidden>
+              <button type="button" id="sw-bold" aria-pressed="true">Chances per week</button>
+              <button type="button" id="sw-stake" aria-pressed="false">Stake</button>
+            </div>
+          </div>
+          <div class="legend">
+            <span><i style="border-color:var(--series-median)"></i>Median</span>
+            <span><i style="border-color:var(--series-mean)"></i>Mean</span>
+            <span><i class="box" style="background:var(--band)"></i>10th–90th percentile</span>
+          </div>
+          <div class="plot" id="sweep-plot"><canvas id="sweep"></canvas><div class="tip" hidden></div></div>
+          <div class="status" id="sweep-status"></div>
+        </section>
+
+        <section class="chart" aria-labelledby="kelly-h" id="kelly-sec" hidden>
+          <div class="chart-head">
+            <div class="t"><h2 id="kelly-h">The average lies: growth per chance by stake</h2><p>At the starting hit rate, for one attempt. The orange line is the expected return, averaged across many people. The blue line is the growth a single person actually compounds at over time. The blue line peaks at the Kelly stake, and past the point where it crosses zero, a typical life shrinks even though every bet has positive expected value.</p></div>
+          </div>
+          <div class="legend">
+            <span><i style="border-color:var(--series-median)"></i>Typical growth (expected log)</span>
+            <span><i style="border-color:var(--series-mean)"></i>Average return</span>
+          </div>
+          <div class="plot" id="kelly-plot"><canvas id="kelly"></canvas><div class="tip" hidden></div></div>
+        </section>
+      </div>
+    </div>
+
+    <div class="notes">
+      <section>
+        <h2>The rules, exactly</h2>
+        <ol>
+          <li>Each week you take a random number of chances: a Poisson draw with mean set by <em>chances per week</em>. Each connection you have also sends you chances, a Poisson draw with mean <code>ties × referrals per tie</code>.</li>
+          <li>Each chance hits with probability <code>p = p₀ × (1 + skill)</code>, or 1.5× that for referrals, capped at 30%. Otherwise it is a loss with probability <em>q</em>, or a dud.</li>
+          <li>A hit pays <code>X ~ Pareto(α, 1)</code>, adds a connection, and adds <em>learning</em> to skill. Every chance has its own probability of adding a connection.</li>
+          <li>Connections fade with the half-life you set. Energy, burnout, and burnt bridges behave as described in the toggles.</li>
+          <li><b>Additive:</b> score starts at 0, hits add <code>X</code>, and losses subtract an exponential draw. <b>Multiplicative:</b> capital starts at 1, a hit multiplies it by <code>1 + stake·X</code>, and a loss multiplies it by <code>1 − stake</code>. Below 0.01 you are ruined and stop playing.</li>
+        </ol>
+      </section>
+      <section>
+        <h2>Network echo</h2>
+        <p>Every chance has some probability of leaving a connection behind. That connection sends you chances for as long as it lasts, and those chances leave connections of their own. The expected number of later chances one chance generates is:</p>
+        <div class="eq">R ≈ (ties per chance + 1.5·p₀) × referrals per tie × (half-life in weeks ÷ ln 2)</div>
+        <p>If R &lt; 1, each chance you take brings back 1/(1 − R) in total, so the echo fades. If R ≥ 1, the network is self-sustaining and grows until your energy is the limit. This model is a branching process, and R = 1 is its threshold.</p>
+      </section>
+      <section>
+        <h2>Why the average lies</h2>
+        <p>Additive growth is <em>ergodic</em>: one person's long-run average gain per week equals the average across many people. Multiplicative growth is not. The mean across many people is pulled up by a few huge winners. One person's long-run growth rate is the mean of the logarithm of each multiplier, and that is always lower.</p>
+        <div class="eq">time-average growth per chance = E[ln(multiplier)] ≤ ln E[multiplier]</div>
+        <p>Switch to multiplicative and push the stake up. The mean line climbs while the median falls and ruin spreads.</p>
+      </section>
+      <section>
+        <h2>Kelly</h2>
+        <p>The Kelly stake is the fraction that maximizes the expected log growth per chance:</p>
+        <div class="eq">g(f) = p·E[ln(1 + f·X)] + q·ln(1 − f), &nbsp;f* = argmax g(f)</div>
+        <p>Below f*, you grow more slowly than you could. Above it, growth falls, and past roughly 2f* it goes negative even though the expected return keeps rising linearly. Additive mode has no stake, but burnout produces the same shape: past a sustainable pace, more chances means fewer chances actually taken.</p>
+      </section>
+    </div>
+  </div>
+</ToyLayout>
+
+<style is:global>
+  /* Everything is scoped under .lsa. Stats and tooltips are rendered with
+     innerHTML, which Astro's scoped styles wouldn't reach. */
+  .lsa {
+    --panel: #0c0d12;
+    --line: #22252f;
+    --grid: #191b22;
+    --fg: #f3f3f5;
+    --fg-2: #b4b7c2;
+    --fg-3: #7a7e8c;
+    --ui: #8f9bff;
+    --series-median: #3987e5;
+    --series-mean: #d95926;
+    --band: rgba(57, 135, 229, 0.2);
+    --path: rgba(180, 190, 215, 0.22);
+    --bad: #e66767;
+    color: var(--fg);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .lsa h1 { font-size: clamp(26px, 5vw, 38px); line-height: 1.1; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+  .lsa h2 { font-size: 16px; margin: 0; line-height: 1.3; text-wrap: balance; }
+  .lsa h3 { font-size: 11px; margin: 0; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-3); font-weight: 400; }
+  .lsa p { margin: 0; }
+  .lsa code { background: none; padding: 0; color: var(--fg); }
+  .lsa-head { display: grid; gap: 10px; margin-bottom: 28px; }
+  .lsa .lede { color: var(--fg-2); max-width: 66ch; }
+
+  .lsa .layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 28px; align-items: start; }
+  @media (max-width: 860px) { .lsa .layout { grid-template-columns: minmax(0, 1fr); } }
+
+  .lsa .controls { display: grid; gap: 20px; position: sticky; top: 5rem; max-height: calc(100vh - 6rem); overflow-y: auto; padding-right: 6px; }
+  @media (max-width: 860px) { .lsa .controls { position: static; max-height: none; overflow: visible; padding-right: 0; } }
+  .lsa .group { display: grid; gap: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .lsa .group.first { border-top: 0; padding-top: 0; }
+  .lsa .presets, .lsa .reroll-row { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+  .lsa .ctl { display: grid; gap: 4px; }
+  .lsa .ctl .row { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+  .lsa .ctl output { color: var(--ui); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .lsa .hint { color: var(--fg-3); font-size: 12px; line-height: 1.45; }
+  .lsa input[type='range'] { width: 100%; accent-color: var(--ui); margin: 2px 0; }
+  .lsa .toggle { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+  .lsa .toggle input { accent-color: var(--ui); margin-top: 5px; }
+  .lsa .toggle small { display: block; color: var(--fg-3); font-size: 12px; line-height: 1.45; }
+  .lsa button { font: inherit; font-size: 13px; color: var(--fg); background: transparent; border: 1px solid var(--line); padding: 5px 12px; border-radius: 3px; cursor: pointer; }
+  .lsa button:hover { border-color: var(--fg-3); }
+  .lsa button:focus-visible, .lsa input:focus-visible { outline: 2px solid var(--ui); outline-offset: 2px; }
+  .lsa button[aria-pressed='true'] { border-color: var(--ui); color: var(--ui); }
+  .lsa .seg { display: inline-flex; justify-self: start; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+  .lsa .seg button { border: 0; border-radius: 0; }
+  .lsa .seg button + button { border-left: 1px solid var(--line); }
+  .lsa .seg button[aria-pressed='true'] { background: var(--ui); color: #000; }
+
+  .lsa .results { display: grid; gap: 34px; min-width: 0; }
+  .lsa .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  @media (max-width: 1100px) and (min-width: 861px), (max-width: 560px) { .lsa .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .lsa .stat { background: #000; padding: 10px 12px; display: grid; gap: 2px; min-width: 0; align-content: start; }
+  .lsa .stat .k { color: var(--fg-3); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; line-height: 1.35; }
+  .lsa .stat .v { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .lsa .stat .s { color: var(--fg-3); font-size: 11.5px; line-height: 1.4; }
+  .lsa .stat.warn .v { color: var(--bad); }
+
+  .lsa .chart { display: grid; gap: 10px; min-width: 0; }
+  .lsa .chart-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 16px; align-items: end; }
+  .lsa .chart-head .t { display: grid; gap: 4px; max-width: 64ch; }
+  .lsa .chart-head .t p { color: var(--fg-2); font-size: 13px; }
+  .lsa .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--fg-2); font-size: 12px; }
+  .lsa .legend i { display: inline-block; width: 14px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 6px; }
+  .lsa .legend i.box { height: 10px; border: 0; }
+  .lsa .plot { position: relative; width: 100%; }
+  .lsa .plot canvas { display: block; width: 100%; touch-action: pan-y; }
+  .lsa .tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); padding: 8px 10px; font-size: 12px; line-height: 1.5; white-space: nowrap; font-variant-numeric: tabular-nums; z-index: 2; }
+  .lsa .tip .sw { display: inline-block; width: 10px; height: 2px; vertical-align: middle; margin-right: 6px; }
+  .lsa .status { color: var(--fg-3); font-size: 12px; min-height: 1.2em; }
+
+  .lsa .notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 36px; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); }
+  @media (max-width: 760px) { .lsa .notes { grid-template-columns: minmax(0, 1fr); } }
+  .lsa .notes section { display: grid; gap: 10px; align-content: start; min-width: 0; }
+  .lsa .notes p, .lsa .notes li { color: var(--fg-2); font-size: 13px; }
+  .lsa .notes ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+  .lsa .notes .eq { color: var(--fg); background: var(--panel); border: 1px solid var(--line); padding: 8px 10px; overflow-x: auto; white-space: nowrap; font-size: 12.5px; }
+</style>
+
+<script>
+  import {
+    DEFAULT_PARAMS, PATH_STEP, simulate, summarize, kellyCurve, networkEcho,
+    type Params, type SimResult, type Summary, type KellyCurve,
+  } from '../../lib/luck/simulation';
+
+  type Mode = 'add' | 'mult';
+  type SliderKey = 'bold' | 'years' | 'p0' | 'alpha' | 'tieRate' | 'refRate' | 'tieHalfLife' | 'learn' | 'q' | 'lossSize' | 'stake';
+  type Pt = [number, number];
+
+  const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
+
+  const SLIDERS: Record<SliderKey, (v: number) => string> = {
+    bold: (v) => `${v}/wk`,
+    years: (v) => `${v} yr`,
+    p0: (v) => `${(v * 100).toFixed(1)}%`,
+    alpha: (v) => `α ${v.toFixed(1)}`,
+    tieRate: (v) => v.toFixed(2),
+    refRate: (v) => `${v.toFixed(3)}/wk`,
+    tieHalfLife: (v) => `${v} yr`,
+    learn: (v) => `+${Math.round(v * 100)}%`,
+    q: (v) => `${Math.round(v * 100)}%`,
+    lossSize: (v) => v.toFixed(2),
+    stake: (v) => `${(v * 100).toFixed(1)}%`,
+  };
+  const KEYS = Object.keys(SLIDERS) as SliderKey[];
+
+  let mode: Mode = 'add';
+  let sweepKey: 'bold' | 'stake' = 'bold';
+  let seed = 1;
+
+  function params(): Params {
+    const P: Params = { ...DEFAULT_PARAMS };
+    for (const k of KEYS) P[k] = +$<HTMLInputElement>(k).value;
+    P.burnout = $<HTMLInputElement>('burnout').checked;
+    P.bridges = $<HTMLInputElement>('bridges').checked;
+    P.catastrophe = $<HTMLInputElement>('catastrophe').checked;
+    P.mult = mode === 'mult';
+    return P;
+  }
+  function syncOutputs() {
+    for (const k of KEYS) $(`${k}-o`).textContent = SLIDERS[k](+$<HTMLInputElement>(k).value);
+  }
+
+  // ---------- formatting & scales ----------
+  function fmtNum(v: number): string {
+    const a = Math.abs(v);
+    if (a >= 1e6) return v.toExponential(1).replace('e+', 'e');
+    if (a >= 1e4) return `${(v / 1e3).toFixed(0)}k`;
+    if (a >= 1e3) return `${(v / 1e3).toFixed(1)}k`;
+    if (a >= 100) return v.toFixed(0);
+    if (a >= 10) return v.toFixed(1);
+    return v.toFixed(2);
+  }
+  const fmt = (v: number) => (mode === 'mult' ? `×${fmtNum(v)}` : fmtNum(v));
+  // y transform: log10 for capital multiples, symmetric log for an additive score that can go negative
+  const tf = (v: number) => (mode === 'mult' ? Math.log10(Math.max(v, 1e-3)) : Math.sign(v) * Math.log10(1 + Math.abs(v)));
+
+  function logTicks(lo: number, hi: number): number[] {
+    const out: number[] = [];
+    const span = hi - lo;
+    const ms = span < 1.2 ? [1, 2, 5] : span < 2.5 ? [1, 3] : [1];
+    const inRange = (y: number) => y >= lo - 1e-9 && y <= hi + 1e-9;
+    if (mode === 'mult') {
+      for (let e = Math.floor(lo) - 1; e <= Math.ceil(hi); e++)
+        for (const m of ms) { const v = m * 10 ** e; if (inRange(Math.log10(v))) out.push(v); }
+    } else {
+      if (inRange(0)) out.push(0);
+      for (let e = 0; e <= 9; e++)
+        for (const m of ms) {
+          const v = m * 10 ** e;
+          if (inRange(tf(v))) out.push(v);
+          if (inRange(tf(-v))) out.push(-v);
+        }
+    }
+    return out.sort((a, b) => a - b);
+  }
+
+  // ---------- canvas helpers ----------
+  const rootStyle = () => getComputedStyle(document.querySelector('.lsa')!);
+  let C: Record<string, string> = {};
+  function readColors() {
+    const s = rootStyle();
+    for (const k of ['grid', 'line', 'fg-2', 'fg-3', 'series-median', 'series-mean', 'band', 'path']) C[k] = s.getPropertyValue(`--${k}`).trim();
+    C.font = getComputedStyle(document.body).fontFamily;
+  }
+  interface Margin { l: number; r: number; t: number; b: number }
+  function setup(canvas: HTMLCanvasElement, h: number) {
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.parentElement!.clientWidth;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    canvas.style.height = `${h}px`;
+    const ctx = canvas.getContext('2d')!;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    ctx.font = `11px ${C.font}`;
+    ctx.textBaseline = 'middle';
+    return { ctx, w, h };
+  }
+  function frame(
+    ctx: CanvasRenderingContext2D, w: number, h: number, M: Margin,
+    yTicks: number[], ys: (v: number) => number, xTicks: { v: number; l: string }[], xs: (v: number) => number,
+    xLabel: string, yFmt: (v: number) => string,
+  ) {
+    ctx.strokeStyle = C.grid; ctx.lineWidth = 1; ctx.fillStyle = C['fg-3']; ctx.textAlign = 'right';
+    for (const t of yTicks) {
+      const y = Math.round(ys(t)) + 0.5;
+      ctx.beginPath(); ctx.moveTo(M.l, y); ctx.lineTo(w - M.r, y); ctx.stroke();
+      ctx.fillText(yFmt(t), M.l - 8, y);
+    }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (const t of xTicks) ctx.fillText(t.l, xs(t.v), h - M.b + 8);
+    ctx.fillText(xLabel, (M.l + w - M.r) / 2, h - M.b + 24);
+    ctx.strokeStyle = C.line;
+    ctx.beginPath(); ctx.moveTo(M.l, h - M.b + 0.5); ctx.lineTo(w - M.r, h - M.b + 0.5); ctx.stroke();
+    ctx.textBaseline = 'middle';
+  }
+  function line(ctx: CanvasRenderingContext2D, pts: Pt[], color: string, width: number) {
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+    ctx.stroke();
+  }
+  function band(ctx: CanvasRenderingContext2D, lo: Pt[], hi: Pt[], color: string) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    hi.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+    for (let i = lo.length - 1; i >= 0; i--) ctx.lineTo(lo[i][0], lo[i][1]);
+    ctx.closePath(); ctx.fill();
+  }
+  function dot(ctx: CanvasRenderingContext2D, x: number, y: number, color: string) {
+    ctx.fillStyle = color; ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, y, 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  }
+  function vline(ctx: CanvasRenderingContext2D, x: number, M: Margin, h: number, color: string, dashed = false) {
+    ctx.strokeStyle = color; ctx.lineWidth = 1;
+    if (dashed) ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(Math.round(x) + 0.5, M.t); ctx.lineTo(Math.round(x) + 0.5, h - M.b); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  function showTip(plot: HTMLElement, x: number, y: number, html: string) {
+    const tip = plot.querySelector<HTMLElement>('.tip')!;
+    tip.innerHTML = html; tip.hidden = false;
+    let left = x + 14;
+    if (left + tip.offsetWidth > plot.clientWidth) left = x - 14 - tip.offsetWidth;
+    tip.style.left = `${Math.max(0, left)}px`;
+    tip.style.top = `${Math.max(0, y - 10)}px`;
+  }
+  const sw = (c: string) => `<span class="sw" style="background:${c}"></span>`;
+  const quantRows = (s: Summary) =>
+    `90th pct&nbsp; ${fmt(s.p90)}<br>${sw(C['series-mean'])}Mean&nbsp;&nbsp;&nbsp;&nbsp; ${fmt(s.mean)}<br>` +
+    `${sw(C['series-median'])}Median&nbsp;&nbsp; ${fmt(s.p50)}<br>10th pct&nbsp; ${fmt(s.p10)}`;
+  function bindHover(plotId: string, canvasId: string, onMove: (x: number) => void, onLeave: () => void) {
+    const plot = $(plotId);
+    const c = $<HTMLCanvasElement>(canvasId);
+    c.addEventListener('pointermove', (e) => onMove(e.clientX - c.getBoundingClientRect().left));
+    c.addEventListener('pointerleave', () => { plot.querySelector<HTMLElement>('.tip')!.hidden = true; onLeave(); });
+  }
+  function yRange(vals: number[], includeZero: boolean): [number, number] {
+    let lo = Infinity, hi = -Infinity;
+    for (const v of vals) { const y = tf(v); if (y < lo) lo = y; if (y > hi) hi = y; }
+    if (!vals.length) { lo = 0; hi = 1; }
+    if (includeZero) lo = Math.min(lo, 0);
+    if (hi - lo < 1) hi = lo + 1;
+    const pad = (hi - lo) * 0.04;
+    return [lo - pad, hi + pad];
+  }
+
+  // ---------- chart 1: lives over time ----------
+  const LIVES = 400, DRAWN = 24;
+  interface Lives { R: SimResult; q: Summary[]; hover: number | null; hit?: { M: Margin; w: number; h: number; xs: (t: number) => number; ys: (v: number) => number } }
+  let lives: Lives | null = null;
+
+  function computeLives(P: Params): Lives {
+    const R = simulate(P, LIVES, seed, LIVES);
+    const n = R.paths[0].length;
+    const col = new Float64Array(R.paths.length);
+    const q: Summary[] = [];
+    for (let t = 0; t < n; t++) {
+      for (let i = 0; i < R.paths.length; i++) col[i] = R.paths[i][t];
+      q.push(summarize(col));
+    }
+    return { R, q, hover: null };
+  }
+  function drawLives() {
+    if (!lives) return;
+    const { R, q } = lives;
+    const n = q.length, years = +$<HTMLInputElement>('years').value;
+    const { ctx, w, h } = setup($<HTMLCanvasElement>('lives'), 320);
+    const M: Margin = { l: 56, r: 14, t: 12, b: 44 };
+    const vals: number[] = [];
+    for (const s of q) vals.push(s.p10, s.p90, s.mean);
+    for (let i = 0; i < DRAWN; i++) vals.push(...R.paths[i]);
+    const [lo, hi] = yRange(vals, mode === 'add');
+    const xs = (t: number) => M.l + (t / (n - 1)) * (w - M.l - M.r);
+    const ys = (v: number) => M.t + (1 - (tf(v) - lo) / (hi - lo)) * (h - M.t - M.b);
+    const xYear = (yr: number) => M.l + (yr / years) * (w - M.l - M.r);
+    const step = years <= 10 ? 2 : years <= 25 ? 5 : 10;
+    const xt = [];
+    for (let y = 0; y <= years; y += step) xt.push({ v: y, l: `${y}` });
+    frame(ctx, w, h, M, logTicks(lo, hi), ys, xt, xYear, 'years', fmt);
+    band(ctx, q.map((s, i) => [xs(i), ys(s.p10)]), q.map((s, i) => [xs(i), ys(s.p90)]), C.band);
+    for (let i = 0; i < DRAWN; i++) line(ctx, Array.from(R.paths[i], (v, t): Pt => [xs(t), ys(v)]), C.path, 1);
+    line(ctx, q.map((s, i) => [xs(i), ys(s.mean)]), C['series-mean'], 2);
+    line(ctx, q.map((s, i) => [xs(i), ys(s.p50)]), C['series-median'], 2);
+    lives.hit = { M, w, h, xs, ys };
+    const t = lives.hover;
+    if (t != null) {
+      const x = xs(t);
+      vline(ctx, x, M, h, C['fg-3']);
+      dot(ctx, x, ys(q[t].p50), C['series-median']);
+      dot(ctx, x, ys(q[t].mean), C['series-mean']);
+      showTip($('lives-plot'), x, ys(q[t].p50), `<b>Year ${((t * PATH_STEP) / 52).toFixed(1)}</b><br>${quantRows(q[t])}`);
+    }
+  }
+  bindHover('lives-plot', 'lives', (x) => {
+    if (!lives?.hit) return;
+    const { M, w } = lives.hit;
+    lives.hover = Math.round(Math.min(1, Math.max(0, (x - M.l) / (w - M.l - M.r))) * (lives.q.length - 1));
+    drawLives();
+  }, () => { if (lives) { lives.hover = null; drawLives(); } });
+
+  // ---------- stats ----------
+  function renderStats(P: Params) {
+    if (!lives) return;
+    const R = lives.R, S = summarize(R.finals);
+    const behind = Array.from(R.finals).filter((v) => (P.mult ? v < 1 : v <= 0)).length / R.finals.length;
+    const echo = networkEcho(P);
+    const tiles: [string, string, string, boolean?][] = [
+      ['Typical life', fmt(S.p50), `median of ${LIVES}`],
+      ['Average', fmt(S.mean), `${(S.mean / Math.max(Math.abs(S.p50), 1e-9)).toFixed(1)}× the median`],
+      ['Top 10% start at', fmt(S.p90), '90th percentile'],
+      ['Bottom 10% end below', fmt(S.p10), '10th percentile'],
+      [P.mult ? 'Ended below start' : 'Ended at or below zero', `${Math.round(behind * 100)}%`, P.mult ? `${Math.round(R.ruined * 100)}% ruined` : 'net losers', behind > 0.25],
+      ['Time burnt out', P.burnout ? `${Math.round(R.burnFrac * 100)}%` : 'off', P.burnout ? 'of all weeks' : 'toggle is off', R.burnFrac > 0.2],
+      ['Network echo R', echo.toFixed(2), echo >= 1 ? 'self-sustaining' : `each chance → ${(1 / (1 - echo)).toFixed(1)} in total`],
+      ['Span', `${P.years} years`, `${Math.round(P.years * 52 * P.bold).toLocaleString()} own chances on average`],
+    ];
+    $('stats').innerHTML = tiles
+      .map(([k, v, s, warn]) => `<div class="stat${warn ? ' warn' : ''}"><span class="k">${k}</span><span class="v">${v}</span><span class="s">${s}</span></div>`)
+      .join('');
+  }
+
+  // ---------- chart 2: sweep ----------
+  const LEVELS = {
+    bold: [0, 0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 12, 15],
+    stake: [0.005, 0.01, 0.02, 0.03, 0.05, 0.07, 0.1, 0.13, 0.17, 0.22, 0.28, 0.35],
+  };
+  const SWEEP_RUNS = 300;
+  interface Sweep { key: 'bold' | 'stake'; levels: number[]; pts: (Summary & { v: number })[]; token: number; cur: number; hover: number | null; hit?: { xs: (v: number) => number } }
+  let sweep: Sweep = { key: 'bold', levels: LEVELS.bold, pts: [], token: 0, cur: 2, hover: null };
+
+  function runSweep() {
+    const P = params();
+    const key = mode === 'mult' ? sweepKey : 'bold';
+    const levels = LEVELS[key];
+    const token = sweep.token + 1;
+    sweep = { key, levels, pts: [], token, cur: P[key], hover: null };
+    $('sweep-h').textContent = key === 'bold' ? 'Where you end up, by boldness' : 'Where you end up, by stake size';
+    let i = 0;
+    const next = () => {
+      if (token !== sweep.token) return;
+      const v = levels[i];
+      sweep.pts.push({ v, ...summarize(simulate({ ...P, [key]: v }, SWEEP_RUNS, seed).finals) });
+      i++;
+      $('sweep-status').textContent = i < levels.length ? `Simulating ${i}/${levels.length} levels…` : `${levels.length} levels × ${SWEEP_RUNS} lives each.`;
+      drawSweep();
+      if (i < levels.length) setTimeout(next, 0);
+    };
+    setTimeout(next, 0);
+  }
+  function drawSweep() {
+    const { ctx, w, h } = setup($<HTMLCanvasElement>('sweep'), 300);
+    const M: Margin = { l: 56, r: 14, t: 12, b: 44 };
+    const { pts, levels, key } = sweep;
+    const xmax = levels[levels.length - 1];
+    const xs = (v: number) => M.l + (v / xmax) * (w - M.l - M.r);
+    const [lo, hi] = yRange(pts.flatMap((p) => [p.p10, p.p90, p.mean, p.p50]), mode === 'add');
+    const ys = (v: number) => M.t + (1 - (tf(v) - lo) / (hi - lo)) * (h - M.t - M.b);
+    const xt = key === 'bold'
+      ? [0, 2, 4, 6, 8, 10, 12, 15].map((v) => ({ v, l: `${v}` }))
+      : [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35].map((v) => ({ v, l: `${Math.round(v * 100)}%` }));
+    frame(ctx, w, h, M, logTicks(lo, hi), ys, xt, xs, key === 'bold' ? 'chances per week' : 'stake per chance', fmt);
+    if (pts.length > 1) {
+      band(ctx, pts.map((p) => [xs(p.v), ys(p.p10)]), pts.map((p) => [xs(p.v), ys(p.p90)]), C.band);
+      line(ctx, pts.map((p) => [xs(p.v), ys(p.mean)]), C['series-mean'], 2);
+      line(ctx, pts.map((p) => [xs(p.v), ys(p.p50)]), C['series-median'], 2);
+    }
+    vline(ctx, xs(Math.min(sweep.cur, xmax)), M, h, C['fg-2'], true);
+    sweep.hit = { xs };
+    const p = sweep.hover != null ? pts[sweep.hover] : undefined;
+    if (p) {
+      const x = xs(p.v);
+      vline(ctx, x, M, h, C['fg-3']);
+      dot(ctx, x, ys(p.p50), C['series-median']);
+      dot(ctx, x, ys(p.mean), C['series-mean']);
+      const label = key === 'bold' ? `${p.v} chances/week` : `${(p.v * 100).toFixed(1)}% stake`;
+      showTip($('sweep-plot'), x, ys(p.p50), `<b>${label}</b><br>${quantRows(p)}`);
+    }
+  }
+  bindHover('sweep-plot', 'sweep', (x) => {
+    if (!sweep.hit || !sweep.pts.length) return;
+    let best = 0, bd = Infinity;
+    sweep.pts.forEach((p, i) => { const d = Math.abs(sweep.hit!.xs(p.v) - x); if (d < bd) { bd = d; best = i; } });
+    sweep.hover = best;
+    drawSweep();
+  }, () => { sweep.hover = null; drawSweep(); });
+
+  // ---------- chart 3: Kelly ----------
+  let kelly: (KellyCurve & { stake: number; hover: number | null; hit?: { M: Margin; w: number } }) | null = null;
+
+  function drawKelly() {
+    if (!kelly) return;
+    const { ctx, w, h } = setup($<HTMLCanvasElement>('kelly'), 280);
+    const M: Margin = { l: 62, r: 14, t: 18, b: 44 };
+    const { pts, fMax } = kelly;
+    let lo = Infinity, hi = -Infinity;
+    for (const p of pts) { lo = Math.min(lo, p.g, p.ev); hi = Math.max(hi, p.g, p.ev); }
+    lo = Math.max(lo, -Math.max(Math.abs(hi), Math.abs(kelly.gStar)) * 3);
+    const pad = (hi - lo) * 0.06; lo -= pad; hi += pad;
+    const xs = (f: number) => M.l + (f / fMax) * (w - M.l - M.r);
+    const ys = (v: number) => M.t + (1 - (Math.max(v, lo) - lo) / (hi - lo)) * (h - M.t - M.b);
+    const raw = (hi - lo) / 5, mag = 10 ** Math.floor(Math.log10(raw));
+    const st = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw)!;
+    const yt: number[] = [];
+    for (let v = Math.ceil(lo / st) * st; v <= hi; v += st) yt.push(Math.abs(v) < st / 1e6 ? 0 : v);
+    const xstep = fMax > 0.3 ? 0.1 : fMax > 0.12 ? 0.05 : 0.02;
+    const xt = [];
+    for (let f = 0; f <= fMax + 1e-9; f += xstep) xt.push({ v: f, l: `${Math.round(f * 100)}%` });
+    const dec = st * 100 < 0.1 ? 2 : st * 100 < 1 ? 1 : 0;
+    frame(ctx, w, h, M, yt, ys, xt, xs, 'stake per chance', (v) => `${(v * 100).toFixed(dec)}%`);
+    const y0 = Math.round(ys(0)) + 0.5;
+    ctx.strokeStyle = C['fg-3']; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(M.l, y0); ctx.lineTo(w - M.r, y0); ctx.stroke();
+    line(ctx, pts.map((p) => [xs(p.f), ys(p.ev)]), C['series-mean'], 2);
+    line(ctx, pts.map((p) => [xs(p.f), ys(p.g)]), C['series-median'], 2);
+    ctx.textAlign = 'center'; ctx.fillStyle = C['fg-2'];
+    if (kelly.fStar > 0) {
+      const x = xs(kelly.fStar);
+      dot(ctx, x, ys(kelly.gStar), C['series-median']);
+      ctx.fillStyle = C['fg-2'];
+      ctx.fillText(`Kelly ${(kelly.fStar * 100).toFixed(1)}%`, x, ys(kelly.gStar) - 14);
+    }
+    if (kelly.fZero && kelly.fZero < fMax) ctx.fillText('zero growth', xs(kelly.fZero), y0 + 14);
+    vline(ctx, xs(Math.min(kelly.stake, fMax)), M, h, C['fg-2'], true);
+    kelly.hit = { M, w };
+    if (kelly.hover != null) {
+      const p = pts[kelly.hover], x = xs(p.f);
+      vline(ctx, x, M, h, C['fg-3']);
+      dot(ctx, x, ys(p.g), C['series-median']);
+      dot(ctx, x, ys(p.ev), C['series-mean']);
+      showTip($('kelly-plot'), x, ys(p.g),
+        `<b>${(p.f * 100).toFixed(1)}% stake</b><br>${sw(C['series-mean'])}Average return ${(p.ev * 100).toFixed(2)}% / chance<br>` +
+        `${sw(C['series-median'])}Typical growth ${(p.g * 100).toFixed(2)}% / chance`);
+    }
+  }
+  bindHover('kelly-plot', 'kelly', (x) => {
+    if (!kelly?.hit) return;
+    const { M, w } = kelly.hit;
+    kelly.hover = Math.round(Math.min(1, Math.max(0, (x - M.l) / (w - M.l - M.r))) * (kelly.pts.length - 1));
+    drawKelly();
+  }, () => { if (kelly) { kelly.hover = null; drawKelly(); } });
+
+  // ---------- orchestration ----------
+  let tMain: ReturnType<typeof setTimeout> | undefined;
+  let tSweep: ReturnType<typeof setTimeout> | undefined;
+
+  function update(immediate: boolean) {
+    syncOutputs();
+    clearTimeout(tMain); clearTimeout(tSweep);
+    const go = () => {
+      const P = params();
+      lives = computeLives(P);
+      renderStats(P);
+      drawLives();
+      $('lives-sub').textContent = `${LIVES} lives with these settings. Twenty-four are drawn individually. ` +
+        (mode === 'mult' ? 'Capital multiple, log scale.' : 'Score, log scale on both sides of zero.');
+      if (P.mult) { kelly = { ...kellyCurve(P), stake: P.stake, hover: null }; drawKelly(); }
+    };
+    if (immediate) go(); else tMain = setTimeout(go, 60);
+    tSweep = setTimeout(runSweep, immediate ? 0 : 350);
+  }
+
+  const MODE_HINT: Record<Mode, string> = {
+    add: 'Each hit adds its payoff to a running score. Fits friendships, skills, and stories.',
+    mult: 'Hits and losses scale with everything you have. Fits money and other capital that funds the next bet.',
+  };
+  function setMode(m: Mode) {
+    mode = m;
+    $('mode-add').setAttribute('aria-pressed', String(m === 'add'));
+    $('mode-mult').setAttribute('aria-pressed', String(m === 'mult'));
+    $('stake-ctl').hidden = m !== 'mult';
+    $('catastrophe-ctl').hidden = m !== 'mult';
+    $('kelly-sec').hidden = m !== 'mult';
+    $('sweep-seg').hidden = m !== 'mult';
+    $('lossSize-ctl').hidden = m === 'mult';
+    $('mode-hint').textContent = MODE_HINT[m];
+    update(true);
+  }
+  function setSweep(k: 'bold' | 'stake') {
+    sweepKey = k;
+    $('sw-bold').setAttribute('aria-pressed', String(k === 'bold'));
+    $('sw-stake').setAttribute('aria-pressed', String(k === 'stake'));
+    runSweep();
+  }
+
+  const PRESETS: Record<string, number> = { cautious: 0.5, steady: 3, reckless: 12 };
+  function markPreset() {
+    const b = +$<HTMLInputElement>('bold').value;
+    document.querySelectorAll<HTMLElement>('[data-preset]').forEach((el) => el.setAttribute('aria-pressed', String(PRESETS[el.dataset.preset!] === b)));
+  }
+
+  readColors();
+  for (const k of KEYS) $(k).addEventListener('input', () => { markPreset(); update(false); });
+  for (const k of ['burnout', 'bridges', 'catastrophe']) $(k).addEventListener('change', () => update(true));
+  $('mode-add').addEventListener('click', () => setMode('add'));
+  $('mode-mult').addEventListener('click', () => setMode('mult'));
+  $('sw-bold').addEventListener('click', () => setSweep('bold'));
+  $('sw-stake').addEventListener('click', () => setSweep('stake'));
+  document.querySelectorAll<HTMLElement>('[data-preset]').forEach((el) =>
+    el.addEventListener('click', () => {
+      $<HTMLInputElement>('bold').value = String(PRESETS[el.dataset.preset!]);
+      markPreset();
+      update(true);
+    }),
+  );
+  $('reroll').addEventListener('click', () => {
+    seed = (seed * 16807 + 11) % 2147483647;
+    $('seed-label').textContent = `dice #${seed}`;
+    update(true);
+  });
+  $('seed-label').textContent = `dice #${seed}`;
+  $('mode-hint').textContent = MODE_HINT.add;
+  new ResizeObserver(() => { drawLives(); drawSweep(); drawKelly(); }).observe(document.querySelector('.lsa .results')!);
+  markPreset();
+  update(true);
+</script>
