@@ -94,6 +94,182 @@ export function poisson(lam: number, r: Rng): number {
   return k - 1;
 }
 
+/** Independent, reproducible stream for life `i` of a run with `seed`. */
+export function lifeRng(seed: number, i: number): Rng {
+  return mulberry32((seed ^ Math.imul(i + 1, 0x9e3779b1)) >>> 0);
+}
+
+export type LifeEventKind = 'first-hit' | 'hit' | 'loss' | 'burnout' | 'ties' | 'skill' | 'catastrophe' | 'ruin' | 'year';
+
+export interface LifeEvent {
+  week: number;
+  kind: LifeEventKind;
+  /** Payoff X for hits, loss size for losses, threshold for milestones. */
+  value: number;
+  /** Hit or loss came through a connection's referral. */
+  referral?: boolean;
+  /** Year summaries: hits and losses that year, referrals turned down. */
+  hits?: number;
+  losses?: number;
+  declined?: number;
+}
+
+/** Week-by-week record of one life (index 0 = start, then one entry per week). */
+export interface LifeRecord {
+  capital: Float64Array;
+  ties: Float64Array;
+  /** Own (non-referral) hit rate at the end of the week. */
+  hitRate: Float64Array;
+  /** Energy after the week's chances, before recovery. */
+  energy: Float64Array;
+  burnt: Uint8Array;
+  /** Largest hit payoff that week (0 if none). */
+  bestHit: Float64Array;
+  /** Hits that week. */
+  hits: Uint8Array;
+  /** Losses that week. */
+  losses: Uint8Array;
+  events: LifeEvent[];
+}
+
+/** Hits at or above this payoff go into the event log. */
+export const NOTABLE_HIT = 4;
+/** Additive losses at or above this size go into the event log. */
+export const NOTABLE_LOSS = 2.5;
+const TIE_MILESTONES = [5, 10, 25, 50, 100, 250, 500];
+const SKILL_MILESTONES = [2, 3, 5]; // multiples of the starting hit rate
+
+function newRecord(weeks: number): LifeRecord {
+  const n = weeks + 1;
+  return {
+    capital: new Float64Array(n), ties: new Float64Array(n), hitRate: new Float64Array(n),
+    energy: new Float64Array(n), burnt: new Uint8Array(n), bestHit: new Float64Array(n),
+    hits: new Uint8Array(n), losses: new Uint8Array(n), events: [],
+  };
+}
+
+interface LifeOutcome {
+  C: number;
+  ruined: boolean;
+  burnWeeks: number;
+}
+
+/**
+ * Runs one life. `path` (optional) receives capital every PATH_STEP weeks;
+ * `rec` (optional) receives the full week-by-week record and event log.
+ */
+function runLife(P: Params, r: Rng, path: Float64Array | null, rec: LifeRecord | null): LifeOutcome {
+  const weeks = Math.round(P.years * 52);
+  const decay = Math.pow(0.5, 1 / (P.tieHalfLife * 52));
+  let C = P.mult ? 1 : 0; // capital / score
+  let T = 0; // connections
+  let s = 0; // skill
+  let E = 1; // energy
+  let burn = 0; // burnout weeks remaining
+  let ruined = false;
+  let burnWeeks = 0;
+  // recorder-only state
+  let anyHit = false, tieM = 0, skillM = 0, yHits = 0, yLoss = 0, yDecl = 0;
+  if (path) path[0] = C;
+  if (rec) {
+    rec.capital[0] = C; rec.hitRate[0] = Math.min(P_CAP, P.p0); rec.energy[0] = 1;
+  }
+
+  for (let w = 1; w <= weeks; w++) {
+    let best = 0, nHit = 0, nLoss = 0, wasBurnt = false, eAfter = E;
+    if (burn > 0) {
+      burn--;
+      burnWeeks++;
+      wasBurnt = true;
+    } else if (!ruined) {
+      const nRef = poisson(T * P.refRate, r);
+      const n = nRef + poisson(P.bold, r);
+      for (let k = 0; k < n; k++) {
+        const ref = k < nRef; // referrals are handled first
+        if (P.burnout) {
+          if (ref && E < DECLINE_BELOW) { if (rec) yDecl++; continue; }
+          if (E <= 0) break;
+        }
+        if (r() < P.tieRate) T += 1;
+        const p = Math.min(P_CAP, P.p0 * (1 + s) * (ref ? REFERRAL_BOOST : 1));
+        const u = r();
+        const costMul = ref ? 0.5 : 1;
+        if (u < p) {
+          s += P.learn;
+          T += 1;
+          E = Math.min(1, E + ENERGY_HIT_BONUS);
+          const X = Math.pow(1 - r(), -1 / P.alpha); // Pareto(alpha, 1)
+          if (P.mult) C *= 1 + P.stake * X;
+          else C += X;
+          if (rec) {
+            yHits++; nHit++;
+            if (X > best) best = X;
+            if (!anyHit) { anyHit = true; rec.events.push({ week: w, kind: 'first-hit', value: X, referral: ref }); }
+            else if (X >= NOTABLE_HIT) rec.events.push({ week: w, kind: 'hit', value: X, referral: ref });
+          }
+        } else if (u < p + P.q) {
+          E -= ENERGY_LOSS * costMul;
+          if (P.bridges) {
+            T = Math.max(0, T - 1);
+            s *= 0.9;
+          }
+          let size: number;
+          if (P.mult) { size = P.stake; C *= 1 - P.stake; }
+          else { size = -P.lossSize * Math.log(1 - r()); C -= size; } // Exponential(mean lossSize)
+          if (rec) {
+            yLoss++; nLoss++;
+            if (!P.mult && size >= NOTABLE_LOSS) rec.events.push({ week: w, kind: 'loss', value: size, referral: ref });
+          }
+        } else {
+          E -= ENERGY_DUD * costMul;
+        }
+        if (P.mult && P.catastrophe && r() < CATASTROPHE_P) {
+          C *= CATASTROPHE_KEEP;
+          if (rec) rec.events.push({ week: w, kind: 'catastrophe', value: 1 - CATASTROPHE_KEEP });
+        }
+        if (P.mult && C < RUIN_BELOW) {
+          ruined = true;
+          C = RUIN_BELOW;
+          if (rec) rec.events.push({ week: w, kind: 'ruin', value: C });
+          break;
+        }
+      }
+      eAfter = Math.max(0, E);
+      if (P.burnout && E <= 0) {
+        burn = BURNOUT_WEEKS;
+        E = 1;
+        if (rec) rec.events.push({ week: w, kind: 'burnout', value: BURNOUT_WEEKS });
+      }
+      E = Math.min(1, E + ENERGY_RECOVER);
+    }
+    T *= decay;
+    if (path && w % PATH_STEP === 0) path[w / PATH_STEP] = C;
+    if (rec) {
+      rec.capital[w] = C; rec.ties[w] = T; rec.hitRate[w] = Math.min(P_CAP, P.p0 * (1 + s));
+      rec.energy[w] = wasBurnt ? 0 : eAfter; rec.burnt[w] = wasBurnt ? 1 : 0;
+      rec.bestHit[w] = best; rec.hits[w] = Math.min(255, nHit); rec.losses[w] = Math.min(255, nLoss);
+      while (tieM < TIE_MILESTONES.length && T >= TIE_MILESTONES[tieM]) {
+        rec.events.push({ week: w, kind: 'ties', value: TIE_MILESTONES[tieM] }); tieM++;
+      }
+      while (skillM < SKILL_MILESTONES.length && 1 + s >= SKILL_MILESTONES[skillM] && P.p0 * SKILL_MILESTONES[skillM] <= P_CAP) {
+        rec.events.push({ week: w, kind: 'skill', value: SKILL_MILESTONES[skillM] }); skillM++;
+      }
+      if (w % 52 === 0) {
+        rec.events.push({ week: w, kind: 'year', value: C, hits: yHits, losses: yLoss, declined: yDecl });
+        yHits = 0; yLoss = 0; yDecl = 0;
+      }
+    }
+  }
+  return { C, ruined, burnWeeks };
+}
+
+/** One fully recorded life: life `index` of the run with `seed`. */
+export function simulateLife(P: Params, seed: number, index = 0): LifeRecord {
+  const rec = newRecord(Math.round(P.years * 52));
+  runLife(P, lifeRng(seed, index), null, rec);
+  return rec;
+}
+
 export interface SimResult {
   finals: Float64Array;
   /** Capital every PATH_STEP weeks, for the first nPaths lives. */
@@ -105,81 +281,17 @@ export interface SimResult {
 }
 
 export function simulate(P: Params, runs: number, seed: number, nPaths = 0): SimResult {
-  const r = mulberry32(seed);
   const weeks = Math.round(P.years * 52);
-  const decay = Math.pow(0.5, 1 / (P.tieHalfLife * 52));
   const finals = new Float64Array(runs);
   const paths: Float64Array[] = [];
   let burnTot = 0;
   let ruinedN = 0;
-
   for (let i = 0; i < runs; i++) {
-    let C = P.mult ? 1 : 0; // capital / score
-    let T = 0; // connections
-    let s = 0; // skill
-    let E = 1; // energy
-    let burn = 0; // burnout weeks remaining
-    let ruined = false;
     const path = i < nPaths ? new Float64Array(Math.floor(weeks / PATH_STEP) + 1) : null;
-    if (path) path[0] = C;
-
-    for (let w = 1; w <= weeks; w++) {
-      if (burn > 0) {
-        burn--;
-        burnTot++;
-        T *= decay;
-        if (path && w % PATH_STEP === 0) path[w / PATH_STEP] = C;
-        continue;
-      }
-      if (!ruined) {
-        const nRef = poisson(T * P.refRate, r);
-        const n = nRef + poisson(P.bold, r);
-        for (let k = 0; k < n; k++) {
-          const ref = k < nRef; // referrals are handled first
-          if (P.burnout) {
-            if (ref && E < DECLINE_BELOW) continue;
-            if (E <= 0) break;
-          }
-          if (r() < P.tieRate) T += 1;
-          const p = Math.min(P_CAP, P.p0 * (1 + s) * (ref ? REFERRAL_BOOST : 1));
-          const u = r();
-          const costMul = ref ? 0.5 : 1;
-          if (u < p) {
-            s += P.learn;
-            T += 1;
-            E = Math.min(1, E + ENERGY_HIT_BONUS);
-            const X = Math.pow(1 - r(), -1 / P.alpha); // Pareto(alpha, 1)
-            if (P.mult) C *= 1 + P.stake * X;
-            else C += X;
-          } else if (u < p + P.q) {
-            E -= ENERGY_LOSS * costMul;
-            if (P.bridges) {
-              T = Math.max(0, T - 1);
-              s *= 0.9;
-            }
-            if (P.mult) C *= 1 - P.stake;
-            else C += P.lossSize * Math.log(1 - r()); // minus an Exponential(mean lossSize)
-          } else {
-            E -= ENERGY_DUD * costMul;
-          }
-          if (P.mult && P.catastrophe && r() < CATASTROPHE_P) C *= CATASTROPHE_KEEP;
-          if (P.mult && C < RUIN_BELOW) {
-            ruined = true;
-            C = RUIN_BELOW;
-            break;
-          }
-        }
-        if (P.burnout && E <= 0) {
-          burn = BURNOUT_WEEKS;
-          E = 1;
-        }
-        E = Math.min(1, E + ENERGY_RECOVER);
-      }
-      T *= decay;
-      if (path && w % PATH_STEP === 0) path[w / PATH_STEP] = C;
-    }
-    finals[i] = C;
-    if (ruined) ruinedN++;
+    const o = runLife(P, lifeRng(seed, i), path, null);
+    finals[i] = o.C;
+    burnTot += o.burnWeeks;
+    if (o.ruined) ruinedN++;
     if (path) paths.push(path);
   }
   return { finals, paths, burnFrac: burnTot / (runs * weeks), ruined: ruinedN / runs };

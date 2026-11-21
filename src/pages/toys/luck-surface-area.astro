@@ -116,6 +116,54 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
       </aside>
 
       <div class="results">
+        <div class="tabs" role="tablist" aria-label="Views">
+          <button type="button" role="tab" id="tab-one-life" aria-controls="panel-one-life" aria-selected="true">One life</button>
+          <button type="button" role="tab" id="tab-many-lives" aria-controls="panel-many-lives" aria-selected="false" tabindex="-1">Many lives</button>
+        </div>
+
+        <div class="panel" id="panel-one-life" role="tabpanel" aria-labelledby="tab-one-life">
+          <div class="life-bar">
+            <button type="button" id="life-play" class="primary">Play</button>
+            <div class="seg" role="group" aria-label="Playback speed">
+              <button type="button" data-speed="1" aria-pressed="true">1 yr/s</button>
+              <button type="button" data-speed="4" aria-pressed="false">4 yr/s</button>
+            </div>
+            <button type="button" id="life-roll">Roll a new life</button>
+            <span class="status" id="life-label"></span>
+          </div>
+          <p class="verdict" id="life-verdict"></p>
+
+          <section class="chart" aria-labelledby="life-h">
+            <div class="chart-head">
+              <div class="t"><h2 id="life-h">Your life</h2><p id="life-sub">Your settings, one roll of the dice, drawn against 400 other lives with the same settings.</p></div>
+            </div>
+            <div class="legend">
+              <span><i style="border-color:var(--fg)"></i>You</span>
+              <span><i style="border-color:var(--series-median)"></i>Median of 400 lives</span>
+              <span><i class="box" style="background:var(--band)"></i>10th–90th percentile</span>
+              <span><i class="dotkey" style="background:var(--hit)"></i>Hit of 4+</span>
+              <span><i class="tick" style="background:var(--bad)"></i>Loss</span>
+              <span><i class="box" style="background:var(--burn)"></i>Burnt out</span>
+            </div>
+            <div class="plot" id="life-plot"><canvas id="life"></canvas><div class="tip" hidden></div></div>
+            <input type="range" id="life-scrub" min="0" max="1040" step="1" value="1040" aria-label="Scrub through the life" />
+          </section>
+
+          <div class="stats" id="life-stats"></div>
+
+          <div class="sparks">
+            <div class="spark"><div class="row"><span class="k">Connections</span><span class="v" id="spark-ties-v"></span></div><canvas id="spark-ties"></canvas></div>
+            <div class="spark"><div class="row"><span class="k">Hit rate</span><span class="v" id="spark-rate-v"></span></div><canvas id="spark-rate"></canvas></div>
+            <div class="spark"><div class="row"><span class="k">Energy left after each week</span><span class="v" id="spark-energy-v"></span></div><canvas id="spark-energy"></canvas></div>
+          </div>
+
+          <section class="chart" aria-labelledby="log-h">
+            <div class="chart-head"><div class="t"><h2 id="log-h">What happened</h2><p>Newest first. Hits of 4 or more, losses of 2.5 or more, burnouts, milestones, and a summary at the end of each year.</p></div></div>
+            <ol class="log" id="life-log"></ol>
+          </section>
+        </div>
+
+        <div class="panel" id="panel-many-lives" role="tabpanel" aria-labelledby="tab-many-lives" hidden>
         <div class="stats" id="stats"></div>
 
         <section class="chart" aria-labelledby="lives-h">
@@ -158,6 +206,7 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
           </div>
           <div class="plot" id="kelly-plot"><canvas id="kelly"></canvas><div class="tip" hidden></div></div>
         </section>
+        </div>
       </div>
     </div>
 
@@ -210,6 +259,8 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
     --band: rgba(57, 135, 229, 0.2);
     --path: rgba(180, 190, 215, 0.22);
     --bad: #e66767;
+    --hit: #e3a92b;
+    --burn: rgba(230, 103, 103, 0.14);
     color: var(--fg);
     font-size: 14px;
     line-height: 1.6;
@@ -218,6 +269,8 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
   .lsa h2 { font-size: 16px; margin: 0; line-height: 1.3; text-wrap: balance; }
   .lsa h3 { font-size: 11px; margin: 0; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-3); font-weight: 400; }
   .lsa p { margin: 0; }
+  /* The blog has no [hidden] reset, and the display rules below would otherwise override it. */
+  .lsa [hidden] { display: none !important; }
   .lsa code { background: none; padding: 0; color: var(--fg); }
   .lsa-head { display: grid; gap: 10px; margin-bottom: 28px; }
   .lsa .lede { color: var(--fg-2); max-width: 66ch; }
@@ -247,7 +300,36 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
   .lsa .seg button + button { border-left: 1px solid var(--line); }
   .lsa .seg button[aria-pressed='true'] { background: var(--ui); color: #000; }
 
-  .lsa .results { display: grid; gap: 34px; min-width: 0; }
+  .lsa .results { display: grid; gap: 22px; min-width: 0; }
+  .lsa .panel { display: grid; gap: 30px; min-width: 0; }
+  .lsa .tabs { display: flex; gap: 22px; border-bottom: 1px solid var(--line); }
+  .lsa .tabs [role='tab'] { border: 0; border-radius: 0; padding: 6px 0 10px; margin-bottom: -1px; color: var(--fg-3); border-bottom: 2px solid transparent; font-size: 14px; }
+  .lsa .tabs [role='tab']:hover { color: var(--fg); }
+  .lsa .tabs [role='tab'][aria-selected='true'] { color: var(--fg); border-bottom-color: var(--ui); }
+
+  .lsa .life-bar { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center; margin-bottom: -16px; }
+  .lsa button.primary { background: var(--ui); border-color: var(--ui); color: #000; min-width: 5.5em; }
+  .lsa button.primary:hover { background: var(--fg); border-color: var(--fg); }
+  .lsa .verdict { font-size: 15px; line-height: 1.5; min-height: 1.5em; margin-bottom: -10px; }
+  .lsa .verdict b { color: var(--ui); }
+  .lsa .legend i.dotkey { width: 8px; height: 8px; border: 0; border-radius: 50%; }
+  .lsa .legend i.tick { width: 2px; height: 8px; border: 0; }
+  .lsa .sparks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: -10px; }
+  @media (max-width: 560px) { .lsa .sparks { grid-template-columns: minmax(0, 1fr); } }
+  .lsa .spark { display: grid; gap: 4px; min-width: 0; }
+  .lsa .spark .row { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .lsa .spark .k { color: var(--fg-3); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .lsa .spark .v { font-variant-numeric: tabular-nums; font-size: 13px; }
+  .lsa .spark canvas { display: block; width: 100%; }
+  .lsa .log { list-style: none; margin: 0; padding: 0; max-height: 340px; overflow-y: auto; border-top: 1px solid var(--line); }
+  .lsa .log li { display: grid; grid-template-columns: 9.5em minmax(0, 1fr); gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--grid); font-size: 13px; line-height: 1.45; }
+  .lsa .log .when { color: var(--fg-3); font-variant-numeric: tabular-nums; }
+  .lsa .log .good .what::before, .lsa .log .bad .what::before, .lsa .log .mile .what::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; }
+  .lsa .log .good .what::before { background: var(--hit); }
+  .lsa .log .bad .what::before { background: var(--bad); }
+  .lsa .log .mile .what::before { background: var(--ui); }
+  .lsa .log .year { color: var(--fg-3); }
+  .lsa .log .empty { color: var(--fg-3); display: block; }
   .lsa .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
   @media (max-width: 1100px) and (min-width: 861px), (max-width: 560px) { .lsa .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .lsa .stat { background: #000; padding: 10px 12px; display: grid; gap: 2px; min-width: 0; align-content: start; }
@@ -279,8 +361,8 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
 
 <script>
   import {
-    DEFAULT_PARAMS, PATH_STEP, simulate, summarize, kellyCurve, networkEcho,
-    type Params, type SimResult, type Summary, type KellyCurve,
+    DEFAULT_PARAMS, PATH_STEP, NOTABLE_HIT, BURNOUT_WEEKS, simulate, simulateLife, summarize, kellyCurve, networkEcho,
+    type Params, type SimResult, type Summary, type KellyCurve, type LifeRecord, type LifeEvent,
   } from '../../lib/luck/simulation';
 
   type Mode = 'add' | 'mult';
@@ -360,7 +442,7 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
   let C: Record<string, string> = {};
   function readColors() {
     const s = rootStyle();
-    for (const k of ['grid', 'line', 'fg-2', 'fg-3', 'series-median', 'series-mean', 'band', 'path']) C[k] = s.getPropertyValue(`--${k}`).trim();
+    for (const k of ['grid', 'line', 'fg', 'fg-2', 'fg-3', 'ui', 'series-median', 'series-mean', 'band', 'path', 'hit', 'bad', 'burn']) C[k] = s.getPropertyValue(`--${k}`).trim();
     C.font = getComputedStyle(document.body).fontFamily;
   }
   interface Margin { l: number; r: number; t: number; b: number }
@@ -408,9 +490,9 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
     for (let i = lo.length - 1; i >= 0; i--) ctx.lineTo(lo[i][0], lo[i][1]);
     ctx.closePath(); ctx.fill();
   }
-  function dot(ctx: CanvasRenderingContext2D, x: number, y: number, color: string) {
+  function dot(ctx: CanvasRenderingContext2D, x: number, y: number, color: string, r = 4.5) {
     ctx.fillStyle = color; ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(x, y, 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
   }
   function vline(ctx: CanvasRenderingContext2D, x: number, M: Margin, h: number, color: string, dashed = false) {
     ctx.strokeStyle = color; ctx.lineWidth = 1;
@@ -531,6 +613,7 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
   let sweep: Sweep = { key: 'bold', levels: LEVELS.bold, pts: [], token: 0, cur: 2, hover: null };
 
   function runSweep() {
+    sweepStale = false;
     const P = params();
     const key = mode === 'mult' ? sweepKey : 'bold';
     const levels = LEVELS[key];
@@ -641,6 +724,277 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
     drawKelly();
   }, () => { if (kelly) { kelly.hover = null; drawKelly(); } });
 
+  // ---------- one life ----------
+  const WEEKS_PER_SEC = 52; // at 1 yr/s
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let lifeSeed = 1;
+  let life: LifeRecord | null = null;
+  let lifeP: Params = DEFAULT_PARAMS;
+  let lifeWeeks = 0;
+  let cursor = 0; // fractional week
+  let playing = false;
+  let speed = 1;
+  let lastTs = 0;
+  let logShown = -1;
+  /** Events shown in the log: repeat burnouts within a year are folded into the year summary. */
+  let logEvents: LifeEvent[] = [];
+  let lifeHover: number | null = null;
+  let cum = { hits: new Int32Array(1), losses: new Int32Array(1), burnouts: new Int32Array(1) };
+
+  function computeLife(P: Params) {
+    const wasAtEnd = !life || cursor >= lifeWeeks;
+    life = simulateLife(P, lifeSeed, 0);
+    lifeP = P;
+    lifeWeeks = life.capital.length - 1;
+    const n = lifeWeeks + 1;
+    const hits = new Int32Array(n), losses = new Int32Array(n), burnouts = new Int32Array(n);
+    for (const e of life.events) if (e.kind === 'burnout') burnouts[e.week]++;
+    for (let w = 1; w < n; w++) {
+      hits[w] = hits[w - 1] + life.hits[w];
+      losses[w] = losses[w - 1] + life.losses[w];
+      burnouts[w] += burnouts[w - 1];
+    }
+    cum = { hits, losses, burnouts };
+    logEvents = [];
+    let lastBurn = -Infinity;
+    for (const e of life.events) {
+      if (e.kind === 'burnout') {
+        const keep = e.week - lastBurn > 52;
+        lastBurn = e.week;
+        if (!keep) continue;
+      }
+      logEvents.push(e);
+    }
+    $<HTMLInputElement>('life-scrub').max = String(lifeWeeks);
+    cursor = wasAtEnd && !playing ? lifeWeeks : Math.min(cursor, lifeWeeks);
+    logShown = -1;
+    $('life-label').textContent = `life #${lifeSeed}`;
+  }
+
+  /** Share of the 400 lives below this life at week w (ties count half). */
+  function percentileAt(w: number): number {
+    if (!lives || !life) return 0.5;
+    const j = Math.min(Math.floor(w / PATH_STEP), lives.q.length - 1);
+    const v = life.capital[j * PATH_STEP];
+    let below = 0, eq = 0;
+    for (const p of lives.R.paths) { if (p[j] < v) below++; else if (p[j] === v) eq++; }
+    return (below + eq / 2) / lives.R.paths.length;
+  }
+  function ordinal(n: number): string {
+    const s = n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th';
+    return `${n}${s}`;
+  }
+  const fmtPct = (v: number) => `${(v * 100).toFixed(v < 0.1 ? 1 : 0)}%`;
+  function when(w: number) {
+    return `Year ${Math.floor((w - 1) / 52) + 1}, wk ${((w - 1) % 52) + 1}`;
+  }
+  function eventLine(e: LifeEvent): { cls: string; when: string; text: string } {
+    const via = e.referral ? ' through a connection' : '';
+    const gain = (x: number) => (lifeP.mult ? `capital +${fmtPct(lifeP.stake * x)}` : `+${fmtNum(x)}`);
+    const at = when(e.week);
+    switch (e.kind) {
+      case 'first-hit': return { cls: 'good', when: at, text: `First thing that paid off${via}: ${gain(e.value)}.` };
+      case 'hit': {
+        const size = e.value >= 50 ? 'Life-changing hit' : e.value >= 10 ? 'Big hit' : 'Good hit';
+        return { cls: 'good', when: at, text: `${size}${via}: ${gain(e.value)}.` };
+      }
+      case 'loss': return { cls: 'bad', when: at, text: `Bad loss${via}: −${fmtNum(e.value)}.` };
+      case 'burnout': return { cls: 'bad', when: at, text: `${cum.burnouts[e.week - 1] ? 'Burnt out again' : 'Burnt out'}. Out for ${e.value} weeks.` };
+      case 'catastrophe': return { cls: 'bad', when: at, text: 'Catastrophe: lost 90% of everything.' };
+      case 'ruin': return { cls: 'bad', when: at, text: 'Ruined. Nothing left to stake.' };
+      case 'ties': return { cls: 'mile', when: at, text: `${e.value} connections who send chances your way.` };
+      case 'skill': return { cls: 'mile', when: at, text: `Your hit rate is now ${e.value}× where you started.` };
+      case 'year': {
+        const nb = cum.burnouts[e.week] - cum.burnouts[e.week - 52];
+        const burnt = nb ? `, burnt out ${nb === 1 ? 'once' : `${nb} times`}` : '';
+        const declined = e.declined ? `, turned down ${e.declined} referral${e.declined === 1 ? '' : 's'}` : '';
+        return {
+          cls: 'year', when: `End of year ${e.week / 52}`,
+          text: `${fmt(e.value)}. ${e.hits} hit${e.hits === 1 ? '' : 's'}, ${e.losses} loss${e.losses === 1 ? '' : 'es'}${burnt}${declined}.`,
+        };
+      }
+    }
+  }
+  function renderLog() {
+    if (!life) return;
+    const cw = Math.floor(cursor);
+    let n = 0;
+    while (n < logEvents.length && logEvents[n].week <= cw) n++;
+    if (n === logShown) return;
+    logShown = n;
+    const items: string[] = [];
+    for (let i = n - 1; i >= 0; i--) {
+      const l = eventLine(logEvents[i]);
+      items.push(`<li class="${l.cls}"><span class="when">${l.when}</span><span class="what">${l.text}</span></li>`);
+    }
+    $('life-log').innerHTML = items.length ? items.join('') : '<li><span class="empty">Nothing yet. Press Play, or drag the slider under the chart.</span></li>';
+  }
+
+  function drawLife() {
+    if (!life || !lives) return;
+    const cw = Math.floor(cursor), W = lifeWeeks, q = lives.q;
+    const { ctx, w, h } = setup($<HTMLCanvasElement>('life'), 320);
+    const M: Margin = { l: 56, r: 14, t: 12, b: 44 };
+    const vals: number[] = Array.from(life.capital);
+    for (const s of q) vals.push(s.p10, s.p90);
+    const [lo, hi] = yRange(vals, mode === 'add');
+    const xs = (wk: number) => M.l + (wk / W) * (w - M.l - M.r);
+    const ys = (v: number) => M.t + (1 - (tf(v) - lo) / (hi - lo)) * (h - M.t - M.b);
+    const years = W / 52;
+    const step = years <= 10 ? 2 : years <= 25 ? 5 : 10;
+    const xt = [];
+    for (let y = 0; y <= years; y += step) xt.push({ v: y * 52, l: `${y}` });
+    frame(ctx, w, h, M, logTicks(lo, hi), ys, xt, xs, 'years', fmt);
+    // burnout stretches
+    ctx.fillStyle = C.burn;
+    let start = -1;
+    for (let k = 1; k <= cw + 1; k++) {
+      const b = k <= cw && life.burnt[k] === 1;
+      if (b && start < 0) start = k;
+      if (!b && start >= 0) { ctx.fillRect(xs(start - 1), M.t, xs(k - 1) - xs(start - 1), h - M.t - M.b); start = -1; }
+    }
+    band(ctx, q.map((s, i) => [xs(i * PATH_STEP), ys(s.p10)]), q.map((s, i) => [xs(i * PATH_STEP), ys(s.p90)]), C.band);
+    line(ctx, q.map((s, i) => [xs(i * PATH_STEP), ys(s.p50)]), C['series-median'], 1.5);
+    const pts: Pt[] = [];
+    for (let k = 0; k <= cw; k++) pts.push([xs(k), ys(life.capital[k])]);
+    line(ctx, pts, C.fg, 2);
+    ctx.fillStyle = C.bad;
+    for (let k = 1; k <= cw; k++) if (life.losses[k]) ctx.fillRect(xs(k) - 1, h - M.b - 8, 2, 7);
+    for (let k = 1; k <= cw; k++) {
+      const x = life.bestHit[k];
+      if (x >= NOTABLE_HIT) dot(ctx, xs(k), ys(life.capital[k]), C.hit, 2.5 + 1.8 * Math.log10(x));
+    }
+    if (cw < W) vline(ctx, xs(cw), M, h, C['fg-3']);
+    dot(ctx, xs(cw), ys(life.capital[cw]), C.fg);
+    if (lifeHover != null) {
+      const k = lifeHover, j = Math.min(Math.round(k / PATH_STEP), q.length - 1), x = xs(k);
+      vline(ctx, x, M, h, C['fg-3']);
+      const you = k <= cw ? `${sw(C.fg)}You&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${fmt(life.capital[k])}<br>` : '';
+      showTip($('life-plot'), x, ys(q[j].p50),
+        `<b>Year ${(k / 52).toFixed(1)}</b><br>${you}90th pct&nbsp; ${fmt(q[j].p90)}<br>` +
+        `${sw(C['series-median'])}Median&nbsp;&nbsp; ${fmt(q[j].p50)}<br>10th pct&nbsp; ${fmt(q[j].p10)}`);
+    }
+  }
+  bindHover('life-plot', 'life', (x) => {
+    const c = $<HTMLCanvasElement>('life');
+    const M = 56, R = 14, wpx = c.clientWidth;
+    lifeHover = Math.round(Math.min(1, Math.max(0, (x - M) / (wpx - M - R))) * lifeWeeks);
+    drawLife();
+  }, () => { lifeHover = null; drawLife(); });
+
+  function drawSpark(id: string, arr: Float64Array, cw: number, ymax: number) {
+    const { ctx, w, h } = setup($<HTMLCanvasElement>(id), 52);
+    const xs = (k: number) => 1 + (k / lifeWeeks) * (w - 2);
+    const ys = (v: number) => h - 2 - (Math.min(v, ymax) / ymax) * (h - 6);
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, h - 1.5); ctx.lineTo(w, h - 1.5); ctx.stroke();
+    if (cw < 1) return;
+    const pts: Pt[] = [];
+    for (let k = 0; k <= cw; k++) pts.push([xs(k), ys(arr[k])]);
+    ctx.globalAlpha = 0.16;
+    band(ctx, pts.map(([x]) => [x, h - 2] as Pt), pts, C.ui);
+    ctx.globalAlpha = 1;
+    line(ctx, pts, C.ui, 1.5);
+  }
+  function drawSparks() {
+    if (!life) return;
+    const cw = Math.floor(cursor);
+    let tMax = 1, rMax = 0;
+    for (let k = 0; k <= lifeWeeks; k++) { if (life.ties[k] > tMax) tMax = life.ties[k]; if (life.hitRate[k] > rMax) rMax = life.hitRate[k]; }
+    drawSpark('spark-ties', life.ties, cw, tMax * 1.05);
+    drawSpark('spark-rate', life.hitRate, cw, rMax * 1.05);
+    drawSpark('spark-energy', life.energy, cw, 1);
+    $('spark-ties-v').textContent = `${Math.floor(life.ties[cw])}`;
+    $('spark-rate-v').textContent = `${(life.hitRate[cw] * 100).toFixed(1)}%`;
+    $('spark-energy-v').textContent = life.burnt[cw] ? 'burnt out' : lifeP.burnout ? life.energy[cw].toFixed(2) : 'off';
+  }
+
+  function tilesHtml(tiles: [string, string, string, boolean?][]) {
+    return tiles
+      .map(([k, v, s, warn]) => `<div class="stat${warn ? ' warn' : ''}"><span class="k">${k}</span><span class="v">${v}</span><span class="s">${s}</span></div>`)
+      .join('');
+  }
+  function renderLifeStats() {
+    if (!life) return;
+    const cw = Math.floor(cursor), pct = Math.round(percentileAt(cw) * 100);
+    const rate = life.hitRate[cw];
+    const b = cum.burnouts[cw];
+    $('life-stats').innerHTML = tilesHtml([
+      ['Year', (cw / 52).toFixed(1), `of ${lifeP.years}`],
+      [lifeP.mult ? 'Capital' : 'Score', fmt(life.capital[cw]), lifeP.mult ? 'started at ×1' : 'started at 0'],
+      ['Percentile now', ordinal(pct), `among ${LIVES} lives`],
+      ['Connections', `${Math.floor(life.ties[cw])}`, 'active right now'],
+      ['Hit rate', `${(rate * 100).toFixed(1)}%`, `${(rate / lifeP.p0).toFixed(1)}× where you started`],
+      ['Hits', `${cum.hits[cw]}`, `${life.events.filter((e) => e.week <= cw && (e.kind === 'hit' || e.kind === 'first-hit') && e.value >= 10).length} of them 10+`],
+      ['Losses', `${cum.losses[cw]}`, lifeP.bridges ? 'each one burns a bridge' : 'bridges intact'],
+      ['Burnouts', `${b}`, lifeP.burnout ? `${b * BURNOUT_WEEKS} weeks lost` : 'toggle is off', b > 0],
+    ]);
+  }
+  function renderVerdict() {
+    if (!life) return;
+    const cw = Math.floor(cursor);
+    const pct = Math.round(percentileAt(cw) * 100);
+    let html: string;
+    if (cw === 0) html = 'Press Play to live it week by week, or drag the slider.';
+    else if (cw >= lifeWeeks) html = `Finished at <b>${fmt(life.capital[cw])}</b>, better than <b>${pct}%</b> of ${LIVES} lives with the same settings.`;
+    else html = `Year ${(cw / 52).toFixed(1)}: at <b>${fmt(life.capital[cw])}</b>, running at the <b>${ordinal(pct)}</b> percentile.`;
+    $('life-verdict').innerHTML = html;
+  }
+  function renderLife() {
+    if (tab !== 'one-life') return;
+    $<HTMLInputElement>('life-scrub').value = String(Math.floor(cursor));
+    drawLife(); drawSparks(); renderLifeStats(); renderLog(); renderVerdict();
+  }
+
+  function tickPlayback(ts: number) {
+    if (!playing) return;
+    const dt = lastTs ? Math.min(0.1, (ts - lastTs) / 1000) : 0;
+    lastTs = ts;
+    cursor = Math.min(lifeWeeks, cursor + dt * WEEKS_PER_SEC * speed);
+    if (cursor >= lifeWeeks) setPlaying(false);
+    renderLife();
+    if (playing) requestAnimationFrame(tickPlayback);
+  }
+  function setPlaying(on: boolean) {
+    if (on && cursor >= lifeWeeks) cursor = 0;
+    playing = on;
+    $('life-play').textContent = on ? 'Pause' : 'Play';
+    if (on) { lastTs = 0; requestAnimationFrame(tickPlayback); }
+  }
+  function rollLife() {
+    lifeSeed = (lifeSeed * 48271) % 2147483647;
+    setPlaying(false);
+    life = null;
+    computeLife(params());
+    if (reduceMotion) cursor = lifeWeeks;
+    else { cursor = 0; setPlaying(true); }
+    renderLife();
+  }
+
+  // ---------- tabs ----------
+  type Tab = 'one-life' | 'many-lives';
+  const TABS: Tab[] = ['one-life', 'many-lives'];
+  let tab: Tab = 'one-life';
+  let sweepStale = true;
+  function showTab(t: Tab, focus = false) {
+    tab = t;
+    for (const x of TABS) {
+      const sel = x === t;
+      const b = $(`tab-${x}`);
+      b.setAttribute('aria-selected', String(sel));
+      b.tabIndex = sel ? 0 : -1;
+      $(`panel-${x}`).hidden = !sel;
+    }
+    if (focus) $(`tab-${t}`).focus();
+    if (t === 'many-lives') {
+      if (playing) setPlaying(false);
+      drawLives(); drawKelly();
+      if (sweepStale) runSweep(); else drawSweep();
+    } else renderLife();
+    if (location.hash !== `#${t}`) history.replaceState(null, '', `#${t}`);
+  }
+  const tabFromHash = (): Tab => (location.hash === '#many-lives' ? 'many-lives' : 'one-life');
+
   // ---------- orchestration ----------
   let tMain: ReturnType<typeof setTimeout> | undefined;
   let tSweep: ReturnType<typeof setTimeout> | undefined;
@@ -651,14 +1005,16 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
     const go = () => {
       const P = params();
       lives = computeLives(P);
+      computeLife(P);
       renderStats(P);
-      drawLives();
       $('lives-sub').textContent = `${LIVES} lives with these settings. Twenty-four are drawn individually. ` +
         (mode === 'mult' ? 'Capital multiple, log scale.' : 'Score, log scale on both sides of zero.');
-      if (P.mult) { kelly = { ...kellyCurve(P), stake: P.stake, hover: null }; drawKelly(); }
+      if (P.mult) kelly = { ...kellyCurve(P), stake: P.stake, hover: null };
+      if (tab === 'many-lives') { drawLives(); drawKelly(); } else renderLife();
     };
     if (immediate) go(); else tMain = setTimeout(go, 60);
-    tSweep = setTimeout(runSweep, immediate ? 0 : 350);
+    sweepStale = true;
+    if (tab === 'many-lives') tSweep = setTimeout(runSweep, immediate ? 0 : 350);
   }
 
   const MODE_HINT: Record<Mode, string> = {
@@ -706,12 +1062,42 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
   );
   $('reroll').addEventListener('click', () => {
     seed = (seed * 16807 + 11) % 2147483647;
+    lifeSeed = (lifeSeed * 48271) % 2147483647;
     $('seed-label').textContent = `dice #${seed}`;
     update(true);
   });
   $('seed-label').textContent = `dice #${seed}`;
   $('mode-hint').textContent = MODE_HINT.add;
-  new ResizeObserver(() => { drawLives(); drawSweep(); drawKelly(); }).observe(document.querySelector('.lsa .results')!);
+
+  // one life controls
+  $('life-play').addEventListener('click', () => setPlaying(!playing));
+  $('life-roll').addEventListener('click', rollLife);
+  $('life-scrub').addEventListener('input', () => {
+    setPlaying(false);
+    cursor = +$<HTMLInputElement>('life-scrub').value;
+    renderLife();
+  });
+  document.querySelectorAll<HTMLElement>('[data-speed]').forEach((el) =>
+    el.addEventListener('click', () => {
+      speed = +el.dataset.speed!;
+      document.querySelectorAll('[data-speed]').forEach((b) => b.setAttribute('aria-pressed', String(b === el)));
+    }),
+  );
+
+  // tabs
+  for (const t of TABS) $(`tab-${t}`).addEventListener('click', () => showTab(t));
+  $('tab-one-life').parentElement!.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    showTab(TABS[(TABS.indexOf(tab) + 1) % TABS.length], true);
+  });
+  window.addEventListener('hashchange', () => { if (tabFromHash() !== tab) showTab(tabFromHash()); });
+
+  new ResizeObserver(() => {
+    if (tab === 'many-lives') { drawLives(); drawSweep(); drawKelly(); } else renderLife();
+  }).observe(document.querySelector('.lsa .results')!);
   markPreset();
+  tab = tabFromHash();
   update(true);
+  showTab(tab);
 </script>
