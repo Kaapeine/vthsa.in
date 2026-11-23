@@ -328,6 +328,19 @@ export function networkEcho(P: Params): number {
   return (P.tieRate + REFERRAL_BOOST * P.p0) * P.refRate * lifeWeeks;
 }
 
+/**
+ * Own chances per week you can keep up without burning out: weekly energy
+ * recovery divided by the expected energy cost of one chance at the starting
+ * hit rate. Ignores referrals (which also cost energy) and week-to-week
+ * randomness, so the real peak sits a little below it.
+ */
+export function sustainablePace(P: Params): number {
+  const p = Math.min(P_CAP, P.p0);
+  const q = Math.min(P.q, 1 - p);
+  const cost = (1 - p - q) * ENERGY_DUD + q * ENERGY_LOSS - p * ENERGY_HIT_BONUS;
+  return cost > 0 ? ENERGY_RECOVER / cost : Infinity;
+}
+
 export interface KellyPoint {
   f: number;
   /** Expected log growth per chance (what one life compounds at). */

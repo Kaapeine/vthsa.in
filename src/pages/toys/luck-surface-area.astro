@@ -119,6 +119,7 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
         <div class="tabs" role="tablist" aria-label="Views">
           <button type="button" role="tab" id="tab-one-life" aria-controls="panel-one-life" aria-selected="true">One life</button>
           <button type="button" role="tab" id="tab-many-lives" aria-controls="panel-many-lives" aria-selected="false" tabindex="-1">Many lives</button>
+          <button type="button" role="tab" id="tab-many-people" aria-controls="panel-many-people" aria-selected="false" tabindex="-1">Many people</button>
         </div>
 
         <div class="panel" id="panel-one-life" role="tabpanel" aria-labelledby="tab-one-life">
@@ -206,6 +207,58 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
           </div>
           <div class="plot" id="kelly-plot"><canvas id="kelly"></canvas><div class="tip" hidden></div></div>
         </section>
+        </div>
+
+        <div class="panel" id="panel-many-people" role="tabpanel" aria-labelledby="tab-many-people" hidden>
+          <p class="panel-lede">400 people share every setting in the rail except one or two, which differ from person to person. Each person then lives many lives. Compare one roll each with the median of each person's rolls to see how much of the spread comes from settings and how much from luck.</p>
+          <div class="vary-grid">
+            {[
+              { id: 'x', label: 'Differs along the x-axis' },
+              { id: 'c', label: 'Differs by colour' },
+            ].map(({ id, label }) => (
+              <div class="vary" id={`vary-${id}`}>
+                <label for={`vary-${id}-key`} class="k">{label}</label>
+                <select id={`vary-${id}-key`}></select>
+                <div class="vary-dist" id={`vary-${id}-dist`}>
+                  <div class="seg" role="group" aria-label="How it is spread across people">
+                    <button type="button" data-vary={id} data-dist="realistic" aria-pressed="true">Realistic</button>
+                    <button type="button" data-vary={id} data-dist="range" aria-pressed="false">Even range</button>
+                  </div>
+                  <div class="range-row" id={`vary-${id}-range`} hidden>
+                    <label>from <input type="number" id={`vary-${id}-min`} step="any" /></label>
+                    <label>to <input type="number" id={`vary-${id}-max`} step="any" /></label>
+                  </div>
+                </div>
+                <div class="hint" id={`vary-${id}-hint`}></div>
+              </div>
+            ))}
+          </div>
+          <div class="bar">
+            <div class="seg" role="group" aria-label="Height of each dot">
+              <button type="button" id="show-first" aria-pressed="true">One roll each</button>
+              <button type="button" id="show-median" aria-pressed="false">Median of their rolls</button>
+            </div>
+            <label class="inline" for="people-rolls">Rolls per person
+              <select id="people-rolls"><option value="25">25</option><option value="100" selected>100</option><option value="400">400</option></select>
+            </label>
+            <div class="seg" role="group" aria-label="Y-axis scale">
+              <button type="button" id="ylin" aria-pressed="true">Linear</button>
+              <button type="button" id="ylog" aria-pressed="false">Log</button>
+            </div>
+            <span class="status" id="people-status"></span>
+          </div>
+          <div class="stats" id="people-stats"></div>
+          <section class="chart" aria-labelledby="people-h">
+            <div class="chart-head">
+              <div class="t"><h2 id="people-h">400 people</h2><p id="people-sub"></p></div>
+            </div>
+            <div class="legend">
+              <span id="people-dot-key"><i class="dotkey" style="background:var(--series-median)"></i>One person</span>
+              <span><i style="border-color:var(--fg)"></i>Median across people, in 10 groups along the x-axis</span>
+              <span class="ramp" id="people-ramp" hidden><span id="ramp-name"></span><span id="ramp-lo"></span><i class="rampbar"></i><span id="ramp-hi"></span></span>
+            </div>
+            <div class="plot" id="people-plot"><canvas id="people"></canvas><div class="tip" hidden></div></div>
+          </section>
         </div>
       </div>
     </div>
@@ -330,6 +383,21 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
   .lsa .log .mile .what::before { background: var(--ui); }
   .lsa .log .year { color: var(--fg-3); }
   .lsa .log .empty { color: var(--fg-3); display: block; }
+
+  .lsa .panel-lede { color: var(--fg-2); max-width: 66ch; margin-bottom: -10px; }
+  .lsa .vary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  @media (max-width: 560px) { .lsa .vary-grid { grid-template-columns: minmax(0, 1fr); } }
+  .lsa .vary { display: grid; gap: 8px; align-content: start; padding: 12px; border: 1px solid var(--line); min-width: 0; }
+  .lsa .vary .k { color: var(--fg-3); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .lsa .vary-dist { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+  .lsa .range-row { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--fg-2); }
+  .lsa select, .lsa input[type='number'] { font: inherit; font-size: 13px; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 3px; padding: 4px 6px; }
+  .lsa input[type='number'] { width: 6.5em; }
+  .lsa select:focus-visible { outline: 2px solid var(--ui); outline-offset: 2px; }
+  .lsa .bar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin-bottom: -14px; }
+  .lsa .inline { display: inline-flex; gap: 8px; align-items: center; color: var(--fg-2); font-size: 13px; }
+  .lsa .ramp { display: inline-flex; gap: 6px; align-items: center; }
+  .lsa .legend i.rampbar { width: 64px; height: 8px; border: 0; margin: 0; background: linear-gradient(90deg, #184f95, #256abf, #3987e5, #6da7ec, #9ec5f4, #cde2fb); }
   .lsa .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
   @media (max-width: 1100px) and (min-width: 861px), (max-width: 560px) { .lsa .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .lsa .stat { background: #000; padding: 10px 12px; display: grid; gap: 2px; min-width: 0; align-content: start; }
@@ -361,9 +429,11 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
 
 <script>
   import {
-    DEFAULT_PARAMS, PATH_STEP, NOTABLE_HIT, BURNOUT_WEEKS, simulate, simulateLife, summarize, kellyCurve, networkEcho,
+    DEFAULT_PARAMS, PATH_STEP, NOTABLE_HIT, BURNOUT_WEEKS, sustainablePace, simulate, simulateLife, summarize, kellyCurve, networkEcho,
     type Params, type SimResult, type Summary, type KellyCurve, type LifeRecord, type LifeEvent,
   } from '../../lib/luck/simulation';
+  import { SIGMA, explainedShare, type VaryKey, type VarySpec, type PersonResult } from '../../lib/luck/people';
+  import type { PeopleMessage, PeopleRequest } from '../../lib/luck/people.worker';
 
   type Mode = 'add' | 'mult';
   type SliderKey = 'bold' | 'years' | 'p0' | 'alpha' | 'tieRate' | 'refRate' | 'tieHalfLife' | 'learn' | 'q' | 'lossSize' | 'stake';
@@ -512,11 +582,33 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
   const quantRows = (s: Summary) =>
     `90th pct&nbsp; ${fmt(s.p90)}<br>${sw(C['series-mean'])}Mean&nbsp;&nbsp;&nbsp;&nbsp; ${fmt(s.mean)}<br>` +
     `${sw(C['series-median'])}Median&nbsp;&nbsp; ${fmt(s.p50)}<br>10th pct&nbsp; ${fmt(s.p10)}`;
-  function bindHover(plotId: string, canvasId: string, onMove: (x: number) => void, onLeave: () => void) {
+  function bindHover(plotId: string, canvasId: string, onMove: (x: number, y: number) => void, onLeave: () => void) {
     const plot = $(plotId);
     const c = $<HTMLCanvasElement>(canvasId);
-    c.addEventListener('pointermove', (e) => onMove(e.clientX - c.getBoundingClientRect().left));
+    c.addEventListener('pointermove', (e) => { const r = c.getBoundingClientRect(); onMove(e.clientX - r.left, e.clientY - r.top); });
     c.addEventListener('pointerleave', () => { plot.querySelector<HTMLElement>('.tip')!.hidden = true; onLeave(); });
+  }
+  function linTicks(lo: number, hi: number): number[] {
+    const raw = (hi - lo) / 5, mag = 10 ** Math.floor(Math.log10(raw));
+    const st = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((x) => x >= raw)!;
+    const out: number[] = [];
+    for (let v = Math.ceil(lo / st) * st; v <= hi + 1e-12; v += st) out.push(Math.abs(v) < st / 1e6 ? 0 : +v.toPrecision(10));
+    return out;
+  }
+  /** Dashed marker at the sustainable pace, when chances per week is on the x-axis. */
+  function paceMarker(ctx: CanvasRenderingContext2D, xs: (v: number) => number, xmin: number, xmax: number, M: Margin, w: number, h: number) {
+    const P = params();
+    if (!P.burnout) return;
+    const pace = sustainablePace(P);
+    if (!(pace > xmin && pace < xmax)) return;
+    const x = xs(pace);
+    vline(ctx, x, M, h, C.bad, true);
+    ctx.fillStyle = C.bad; ctx.textBaseline = 'top';
+    const label = `sustainable pace ≈ ${pace.toFixed(1)}/wk`;
+    const right = x + 6 + ctx.measureText(label).width > w - M.r;
+    ctx.textAlign = right ? 'right' : 'left';
+    ctx.fillText(label, right ? x - 6 : x + 6, M.t + 2);
+    ctx.textBaseline = 'middle';
   }
   function yRange(vals: number[], includeZero: boolean): [number, number] {
     let lo = Infinity, hi = -Infinity;
@@ -650,6 +742,7 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
       line(ctx, pts.map((p) => [xs(p.v), ys(p.p50)]), C['series-median'], 2);
     }
     vline(ctx, xs(Math.min(sweep.cur, xmax)), M, h, C['fg-2'], true);
+    if (key === 'bold') paceMarker(ctx, xs, 0, xmax, M, w, h);
     sweep.hit = { xs };
     const p = sweep.hover != null ? pts[sweep.hover] : undefined;
     if (p) {
@@ -971,9 +1064,267 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
     renderLife();
   }
 
+  // ---------- many people ----------
+  const PEOPLE = 400;
+  const VARY: { key: VaryKey; label: string; only?: Mode }[] = [
+    { key: 'bold', label: 'Chances per week' },
+    { key: 'p0', label: 'Starting hit rate' },
+    { key: 'tieRate', label: 'Ties per chance' },
+    { key: 'q', label: 'Chance of a loss' },
+    { key: 'alpha', label: 'Payoff tail' },
+    { key: 'lossSize', label: 'Average loss size', only: 'add' },
+    { key: 'stake', label: 'Stake per chance', only: 'mult' },
+    { key: 'refRate', label: 'Referrals per tie' },
+    { key: 'tieHalfLife', label: 'Tie half-life' },
+    { key: 'learn', label: 'Learning per hit' },
+  ];
+  const varyLabel = (k: VaryKey) => VARY.find((v) => v.key === k)!.label;
+  type Slot = 'x' | 'c';
+  interface VaryUI { key: VaryKey | null; dist: 'realistic' | 'range'; min: number; max: number }
+  const bounds = (k: VaryKey): [number, number] => {
+    const el = $<HTMLInputElement>(k);
+    return [+el.min, +el.max];
+  };
+  const vary: Record<Slot, VaryUI> = {
+    x: { key: 'bold', dist: 'realistic', min: 0, max: 15 },
+    c: { key: 'p0', dist: 'realistic', min: 0.005, max: 0.15 },
+  };
+  let showMedian = false;
+  let peopleRolls = 100;
+  let peopleStale = true;
+  let peopleWorker: Worker | null = null;
+  let peopleHover: number | null = null;
+  let peopleFrame = 0;
+  /** null = follow the mode: linear for additive scores, log for multiplicative capital. */
+  let peopleYLog: boolean | null = null;
+  interface PeopleRun {
+    P: Params; specs: VarySpec[]; vals: number[][]; first: number[]; results: (PersonResult | undefined)[]; done: number; rolls: number;
+    hit?: { xs: (v: number) => number; yv: (v: number) => number; shown: number[]; ys: (number | undefined)[] };
+  }
+  let pop: PeopleRun | null = null;
+
+  const allowed = (k: VaryKey) => { const v = VARY.find((x) => x.key === k)!; return !v.only || v.only === mode; };
+  function populateVarySelects() {
+    if (vary.x.key && !allowed(vary.x.key)) setVaryKey('x', 'bold');
+    if (vary.c.key && !allowed(vary.c.key)) vary.c.key = null;
+    for (const slot of ['x', 'c'] as Slot[]) {
+      const sel = $<HTMLSelectElement>(`vary-${slot}-key`);
+      const opts = VARY.filter((v) => allowed(v.key)).map((v) => `<option value="${v.key}">${v.label}</option>`);
+      if (slot === 'c') opts.unshift('<option value="">Nothing (all one colour)</option>');
+      sel.innerHTML = opts.join('');
+      sel.value = vary[slot].key ?? '';
+    }
+  }
+  function setVaryKey(slot: Slot, k: VaryKey | null) {
+    vary[slot].key = k;
+    if (k) [vary[slot].min, vary[slot].max] = bounds(k);
+    const other: Slot = slot === 'x' ? 'c' : 'x';
+    if (k && vary[other].key === k) vary[other].key = other === 'x' ? (VARY.find((v) => v.key !== k && allowed(v.key))!.key) : null;
+  }
+  function syncVaryUI() {
+    const P = params();
+    for (const slot of ['x', 'c'] as Slot[]) {
+      const ui = vary[slot];
+      $<HTMLSelectElement>(`vary-${slot}-key`).value = ui.key ?? '';
+      $(`vary-${slot}-dist`).hidden = !ui.key;
+      document.querySelectorAll<HTMLElement>(`[data-vary="${slot}"]`).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.dist === ui.dist)));
+      $(`vary-${slot}-range`).hidden = ui.dist !== 'range';
+      $<HTMLInputElement>(`vary-${slot}-min`).value = String(ui.min);
+      $<HTMLInputElement>(`vary-${slot}-max`).value = String(ui.max);
+      let hint = '';
+      if (!ui.key) hint = 'Everyone is drawn in the same colour.';
+      else {
+        const F = SLIDERS[ui.key];
+        if (ui.dist === 'range') hint = `Spread evenly from ${F(ui.min)} to ${F(ui.max)}.`;
+        else {
+          const m = P[ui.key];
+          if (m <= 0) hint = 'Your setting is 0, so everyone gets 0. Use an even range instead.';
+          else {
+            const s = SIGMA[ui.key], [lo, hi] = bounds(ui.key);
+            const q25 = Math.max(lo, m * Math.exp(-0.674 * s)), q75 = Math.min(hi, m * Math.exp(0.674 * s));
+            hint = `Log-normal around your setting of ${F(m)}: half of people between ${F(q25)} and ${F(q75)}, a few much further out.`;
+          }
+        }
+      }
+      $(`vary-${slot}-hint`).textContent = hint;
+    }
+  }
+  function currentSpecs(): VarySpec[] {
+    const specs: VarySpec[] = [];
+    for (const slot of ['x', 'c'] as Slot[]) {
+      const ui = vary[slot];
+      if (!ui.key) continue;
+      const [lo, hi] = bounds(ui.key);
+      specs.push(ui.dist === 'range'
+        ? { key: ui.key, dist: 'range', min: Math.min(ui.min, ui.max), max: Math.max(ui.min, ui.max) }
+        : { key: ui.key, dist: 'realistic', min: lo, max: hi });
+    }
+    return specs;
+  }
+
+  function runPeople() {
+    peopleStale = false;
+    peopleWorker?.terminate();
+    const P = params();
+    const specs = currentSpecs();
+    pop = { P, specs, vals: [], first: [], results: new Array(PEOPLE).fill(undefined), done: 0, rolls: peopleRolls };
+    const w = new Worker(new URL('../../lib/luck/people.worker.ts', import.meta.url), { type: 'module' });
+    peopleWorker = w;
+    w.onmessage = (e: MessageEvent<PeopleMessage>) => {
+      if (peopleWorker !== w || !pop) return;
+      const m = e.data;
+      if (m.type === 'people') { pop.vals = m.vals; pop.first = m.first; }
+      else if (m.type === 'rolls') { m.results.forEach((r, j) => { pop!.results[m.from + j] = r; }); pop.done = Math.min(PEOPLE, m.from + m.results.length); }
+      else { w.terminate(); peopleWorker = null; }
+      if (!peopleFrame) peopleFrame = requestAnimationFrame(() => { peopleFrame = 0; renderPeople(); });
+    };
+    const req: PeopleRequest = { base: P, specs, n: PEOPLE, rolls: peopleRolls, seed };
+    w.postMessage(req);
+    renderPeople();
+  }
+
+  const RAMP = ['#184f95', '#256abf', '#3987e5', '#6da7ec', '#9ec5f4', '#cde2fb'];
+  function rampColor(t: number) {
+    const x = Math.min(1, Math.max(0, t)) * (RAMP.length - 1), i = Math.min(RAMP.length - 2, Math.floor(x)), f = x - i;
+    const a = RAMP[i], b = RAMP[i + 1];
+    const ch = (h: string, o: number) => parseInt(h.slice(o, o + 2), 16);
+    const mix = (o: number) => Math.round(ch(a, o) + (ch(b, o) - ch(a, o)) * f);
+    return `rgb(${mix(1)},${mix(3)},${mix(5)})`;
+  }
+  /** Linear or log scale for a setting's values; log when the spread is log-normal. */
+  function axisFor(spec: VarySpec, vals: number[]) {
+    const isLog = spec.dist === 'realistic' && Math.min(...vals) > 0;
+    let lo = spec.dist === 'range' ? spec.min : Math.min(...vals);
+    let hi = spec.dist === 'range' ? spec.max : Math.max(...vals);
+    if (hi <= lo) { hi = lo + (lo || 1) * 0.1; lo = Math.max(0, lo - (lo || 1) * 0.1); }
+    const f = isLog ? (v: number) => (Math.log10(v) - Math.log10(lo)) / (Math.log10(hi) - Math.log10(lo)) : (v: number) => (v - lo) / (hi - lo);
+    let ticks: number[] = [];
+    if (isLog) {
+      for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++)
+        for (const m of [1, 2, 5]) { const v = m * 10 ** e; if (v >= lo && v <= hi) ticks.push(v); }
+    }
+    if (ticks.length < 3) {
+      const raw = (hi - lo) / 5, mag = 10 ** Math.floor(Math.log10(raw));
+      const st = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw)!;
+      ticks = [];
+      for (let v = Math.ceil(lo / st) * st; v <= hi + 1e-12; v += st) ticks.push(+v.toPrecision(10));
+    }
+    return { f, ticks, isLog };
+  }
+
+  function renderPeople() {
+    if (tab !== 'many-people' || !pop) return;
+    const { specs, vals, first, results, done, rolls } = pop;
+    $('people-status').textContent = !vals.length ? 'Drawing people…'
+      : done < PEOPLE ? `Rolling ${done}/${PEOPLE} people × ${rolls} lives…`
+      : `${PEOPLE} people × ${rolls} lives = ${(PEOPLE * rolls).toLocaleString()} lives.`;
+    const ys: (number | undefined)[] = showMedian ? results.map((r) => r?.median) : first;
+    const shown: number[] = [];
+    ys.forEach((y, i) => { if (y !== undefined && vals[i]) shown.push(i); });
+
+    // headline
+    const got = results.filter((r): r is PersonResult => !!r);
+    const share = got.length >= 20 ? explainedShare(got, rolls) : null;
+    const so = done < PEOPLE ? `so far (${done}/${PEOPLE})` : 'of the spread in log outcome';
+    const desc = (i: number) => specs.map((s, j) => SLIDERS[s.key](vals[i][j])).join(', ');
+    let best = -1;
+    for (const i of shown) if (best < 0 || ys[i]! > ys[best]!) best = i;
+    const sorted = shown.map((i) => ys[i]!).sort((a, b) => a - b);
+    $('people-stats').innerHTML = tilesHtml([
+      ['Settings explain', share == null ? '…' : `${Math.round(share * 100)}%`, so],
+      ['Luck explains', share == null ? '…' : `${100 - Math.round(share * 100)}%`, 'the rest'],
+      [showMedian ? 'Best median' : 'Luckiest roll', best >= 0 ? fmt(ys[best]!) : '…', best >= 0 ? desc(best) : ''],
+      ['Typical person', sorted.length ? fmt(sorted[Math.floor(sorted.length / 2)]) : '…', showMedian ? 'median of the medians' : 'median of one roll each'],
+    ]);
+    const fixed = 'Everything else is set by the rail.';
+    $('people-sub').textContent = `Each dot is one person. Height is ${showMedian ? `the median of their ${rolls} lives` : 'one roll of the dice for each person'}. ${fixed}`;
+
+    // chart
+    const { ctx, w, h } = setup($<HTMLCanvasElement>('people'), 360);
+    const M: Margin = { l: 56, r: 14, t: 12, b: 44 };
+    if (!vals.length) { pop.hit = undefined; return; }
+    const xs0 = axisFor(specs[0], vals.map((v) => v[0]));
+    const xs = (v: number) => M.l + xs0.f(v) * (w - M.l - M.r);
+    const allY: number[] = [];
+    for (const i of shown) allY.push(ys[i]!);
+    if (showMedian) for (const i of shown) allY.push(first[i]); // keep the same y-axis in both views
+    else for (const r of got) allY.push(r.median);
+    const yLog = peopleYLog ?? mode === 'mult';
+    $('ylog').setAttribute('aria-pressed', String(yLog));
+    $('ylin').setAttribute('aria-pressed', String(!yLog));
+    let yv: (v: number) => number, yTicks: number[];
+    if (yLog) {
+      const [lo, hi] = yRange(allY, mode === 'add');
+      yv = (v) => M.t + (1 - (tf(v) - lo) / (hi - lo)) * (h - M.t - M.b);
+      yTicks = logTicks(lo, hi);
+    } else {
+      let lo = Math.min(0, ...allY), hi = Math.max(...allY);
+      if (hi <= lo) hi = lo + 1;
+      const pad = (hi - lo) * 0.04;
+      if (lo < 0) lo -= pad;
+      hi += pad;
+      yv = (v) => M.t + (1 - (v - lo) / (hi - lo)) * (h - M.t - M.b);
+      yTicks = linTicks(lo, hi);
+    }
+    const xVals = vals.map((v) => v[0]);
+    frame(ctx, w, h, M, yTicks, yv, xs0.ticks.map((v) => ({ v, l: SLIDERS[specs[0].key](v) })), xs,
+      varyLabel(specs[0].key).toLowerCase() + (xs0.isLog ? ' (log scale)' : ''), fmt);
+    if (specs[0].key === 'bold') paceMarker(ctx, xs, Math.min(...xVals), Math.max(...xVals), M, w, h);
+
+    const cSpec = specs[1];
+    const cAxis = cSpec ? axisFor(cSpec, vals.map((v) => v[1])) : null;
+    for (const i of shown) {
+      const color = cAxis ? rampColor(cAxis.f(vals[i][1])) : C['series-median'];
+      ctx.globalAlpha = 0.9;
+      dot(ctx, xs(vals[i][0]), yv(ys[i]!), color, 3.2);
+    }
+    ctx.globalAlpha = 1;
+    // trend: median y in 10 equal-count groups along x
+    if (shown.length >= 40) {
+      const byX = [...shown].sort((a, b) => vals[a][0] - vals[b][0]);
+      const pts: Pt[] = [];
+      for (let g = 0; g < 10; g++) {
+        const grp = byX.slice(Math.floor((g * byX.length) / 10), Math.floor(((g + 1) * byX.length) / 10));
+        const gx = grp.map((i) => vals[i][0]).sort((a, b) => a - b), gy = grp.map((i) => ys[i]!).sort((a, b) => a - b);
+        pts.push([xs(gx[gx.length >> 1]), yv(gy[gy.length >> 1])]);
+      }
+      ctx.strokeStyle = '#000'; ctx.lineWidth = 5; ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke();
+      line(ctx, pts, C.fg, 2);
+    }
+    // legend ramp
+    $('people-ramp').hidden = !cSpec;
+    $('people-dot-key').hidden = !!cSpec;
+    if (cSpec && cAxis) {
+      const cv = vals.map((v) => v[1]);
+      $('ramp-name').textContent = varyLabel(cSpec.key);
+      $('ramp-lo').textContent = SLIDERS[cSpec.key](cSpec.dist === 'range' ? cSpec.min : Math.min(...cv));
+      $('ramp-hi').textContent = SLIDERS[cSpec.key](cSpec.dist === 'range' ? cSpec.max : Math.max(...cv));
+    }
+    pop.hit = { xs, yv, shown, ys };
+    if (peopleHover != null && vals[peopleHover] && ys[peopleHover] !== undefined) {
+      const i = peopleHover, x = xs(vals[i][0]), y = yv(ys[i]!);
+      ctx.strokeStyle = C.fg; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2); ctx.stroke();
+      const rows = specs.map((s, j) => `${varyLabel(s.key)}: ${SLIDERS[s.key](vals[i][j])}`).join('<br>');
+      const r = results[i];
+      showTip($('people-plot'), x, y,
+        `<b>Person ${i + 1}</b><br>${rows}<br>One roll&nbsp;&nbsp; ${fmt(first[i])}<br>` +
+        (r ? `Median of ${rolls} ${fmt(r.median)}` : `Median: still rolling`));
+    } else $('people-plot').querySelector<HTMLElement>('.tip')!.hidden = true;
+  }
+  bindHover('people-plot', 'people', (x, yPx) => {
+    const hit = pop?.hit;
+    if (!hit || !pop) return;
+    let best: number | null = null, bd = 14 * 14;
+    for (const i of hit.shown) {
+      const dx = hit.xs(pop.vals[i][0]) - x, dy = hit.yv(hit.ys[i]!) - yPx, d = dx * dx + dy * dy;
+      if (d < bd) { bd = d; best = i; }
+    }
+    if (best !== peopleHover) { peopleHover = best; renderPeople(); }
+  }, () => { peopleHover = null; renderPeople(); });
+
   // ---------- tabs ----------
-  type Tab = 'one-life' | 'many-lives';
-  const TABS: Tab[] = ['one-life', 'many-lives'];
+  type Tab = 'one-life' | 'many-lives' | 'many-people';
+  const TABS: Tab[] = ['one-life', 'many-lives', 'many-people'];
   let tab: Tab = 'one-life';
   let sweepStale = true;
   function showTab(t: Tab, focus = false) {
@@ -986,22 +1337,26 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
       $(`panel-${x}`).hidden = !sel;
     }
     if (focus) $(`tab-${t}`).focus();
+    if (t !== 'one-life' && playing) setPlaying(false);
     if (t === 'many-lives') {
-      if (playing) setPlaying(false);
       drawLives(); drawKelly();
       if (sweepStale) runSweep(); else drawSweep();
+    } else if (t === 'many-people') {
+      if (peopleStale) runPeople(); else renderPeople();
     } else renderLife();
     if (location.hash !== `#${t}`) history.replaceState(null, '', `#${t}`);
   }
-  const tabFromHash = (): Tab => (location.hash === '#many-lives' ? 'many-lives' : 'one-life');
+  const tabFromHash = (): Tab => (TABS.find((t) => `#${t}` === location.hash) ?? 'one-life');
 
   // ---------- orchestration ----------
   let tMain: ReturnType<typeof setTimeout> | undefined;
   let tSweep: ReturnType<typeof setTimeout> | undefined;
+  let tPeople: ReturnType<typeof setTimeout> | undefined;
 
   function update(immediate: boolean) {
     syncOutputs();
-    clearTimeout(tMain); clearTimeout(tSweep);
+    clearTimeout(tMain); clearTimeout(tSweep); clearTimeout(tPeople);
+    syncVaryUI();
     const go = () => {
       const P = params();
       lives = computeLives(P);
@@ -1015,6 +1370,8 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
     if (immediate) go(); else tMain = setTimeout(go, 60);
     sweepStale = true;
     if (tab === 'many-lives') tSweep = setTimeout(runSweep, immediate ? 0 : 350);
+    peopleStale = true;
+    if (tab === 'many-people') tPeople = setTimeout(runPeople, immediate ? 0 : 400);
   }
 
   const MODE_HINT: Record<Mode, string> = {
@@ -1031,6 +1388,8 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
     $('sweep-seg').hidden = m !== 'mult';
     $('lossSize-ctl').hidden = m === 'mult';
     $('mode-hint').textContent = MODE_HINT[m];
+    populateVarySelects();
+    peopleYLog = null;
     update(true);
   }
   function setSweep(k: 'bold' | 'stake') {
@@ -1084,17 +1443,51 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
     }),
   );
 
+  // many people controls
+  for (const slot of ['x', 'c'] as Slot[]) {
+    $(`vary-${slot}-key`).addEventListener('change', () => {
+      setVaryKey(slot, ($<HTMLSelectElement>(`vary-${slot}-key`).value || null) as VaryKey | null);
+      syncVaryUI(); runPeople();
+    });
+    for (const end of ['min', 'max'] as const)
+      $(`vary-${slot}-${end}`).addEventListener('change', () => {
+        const v = parseFloat($<HTMLInputElement>(`vary-${slot}-${end}`).value);
+        if (Number.isFinite(v)) vary[slot][end] = Math.max(0, v);
+        syncVaryUI(); runPeople();
+      });
+  }
+  document.querySelectorAll<HTMLElement>('[data-vary]').forEach((b) =>
+    b.addEventListener('click', () => {
+      const slot = b.dataset.vary as Slot;
+      vary[slot].dist = b.dataset.dist as VaryUI['dist'];
+      syncVaryUI(); runPeople();
+    }),
+  );
+  const setShow = (median: boolean) => {
+    showMedian = median;
+    $('show-first').setAttribute('aria-pressed', String(!median));
+    $('show-median').setAttribute('aria-pressed', String(median));
+    renderPeople();
+  };
+  $('ylin').addEventListener('click', () => { peopleYLog = false; renderPeople(); });
+  $('ylog').addEventListener('click', () => { peopleYLog = true; renderPeople(); });
+  $('show-first').addEventListener('click', () => setShow(false));
+  $('show-median').addEventListener('click', () => setShow(true));
+  $('people-rolls').addEventListener('change', () => { peopleRolls = +$<HTMLSelectElement>('people-rolls').value; runPeople(); });
+  populateVarySelects();
+
   // tabs
   for (const t of TABS) $(`tab-${t}`).addEventListener('click', () => showTab(t));
   $('tab-one-life').parentElement!.addEventListener('keydown', (e) => {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
     e.preventDefault();
-    showTab(TABS[(TABS.indexOf(tab) + 1) % TABS.length], true);
+    const d = e.key === 'ArrowRight' ? 1 : TABS.length - 1;
+    showTab(TABS[(TABS.indexOf(tab) + d) % TABS.length], true);
   });
   window.addEventListener('hashchange', () => { if (tabFromHash() !== tab) showTab(tabFromHash()); });
 
   new ResizeObserver(() => {
-    if (tab === 'many-lives') { drawLives(); drawSweep(); drawKelly(); } else renderLife();
+    if (tab === 'many-lives') { drawLives(); drawSweep(); drawKelly(); } else if (tab === 'many-people') renderPeople(); else renderLife();
   }).observe(document.querySelector('.lsa .results')!);
   markPreset();
   tab = tabFromHash();

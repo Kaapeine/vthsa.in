@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DEFAULT_PARAMS, simulate, simulateLife, summarize, kellyCurve, networkEcho, poisson, mulberry32 } from './simulation';
+import { DEFAULT_PARAMS, simulate, simulateLife, sustainablePace, summarize, kellyCurve, networkEcho, poisson, mulberry32 } from './simulation';
 
 const P = { ...DEFAULT_PARAMS, years: 5 };
 
@@ -91,5 +91,18 @@ describe('simulateLife', () => {
     const { events } = simulateLife({ ...P, years: 20, bold: 8 }, 4);
     for (let i = 1; i < events.length; i++) expect(events[i].week).toBeGreaterThanOrEqual(events[i - 1].week);
     expect(events.some((e) => e.kind === 'burnout')).toBe(true);
+  });
+});
+
+describe('sustainablePace', () => {
+  it('is recovery over expected cost per chance', () => {
+    const cost = 0.92 * 0.05 + 0.05 * 0.15 - 0.03 * 0.05;
+    expect(sustainablePace(DEFAULT_PARAMS)).toBeCloseTo(0.25 / cost, 10);
+  });
+
+  it('marks the burnout peak: just below it beats twice it', () => {
+    const pace = sustainablePace(DEFAULT_PARAMS);
+    const at = (b: number) => summarize(simulate({ ...DEFAULT_PARAMS, bold: b }, 300, 8).finals).p50;
+    expect(at(pace * 0.85)).toBeGreaterThan(at(pace * 2));
   });
 });
