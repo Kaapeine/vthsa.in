@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DEFAULT_PARAMS, simulate, simulateLife, sustainablePace, summarize, kellyCurve, networkEcho, poisson, mulberry32 } from './simulation';
+import { DEFAULT_PARAMS, simulate, simulateLife, sustainablePace, practiceRate, chanceQuality, summarize, kellyCurve, networkEcho, poisson, mulberry32 } from './simulation';
 
 const P = { ...DEFAULT_PARAMS, years: 5 };
 
@@ -104,5 +104,37 @@ describe('sustainablePace', () => {
     const pace = sustainablePace(DEFAULT_PARAMS);
     const at = (b: number) => summarize(simulate({ ...DEFAULT_PARAMS, bold: b }, 300, 8).finals).p50;
     expect(at(pace * 0.85)).toBeGreaterThan(at(pace * 2));
+  });
+});
+
+describe('practiceRate', () => {
+  const D = DEFAULT_PARAMS;
+  it('starts at p0, closes half the gap at halfway and three quarters at 3x halfway', () => {
+    expect(practiceRate(D, 0)).toBe(D.p0);
+    expect(practiceRate(D, D.halfway)).toBeCloseTo((D.p0 + D.pMax) / 2, 12);
+    expect(practiceRate(D, 3 * D.halfway)).toBeCloseTo(D.pMax - (D.pMax - D.p0) / 4, 12);
+    expect(practiceRate(D, 1e9)).toBeLessThan(D.pMax);
+  });
+
+  it('never drops below p0 when the best rate is set lower', () => {
+    expect(practiceRate({ ...D, pMax: 0.01 }, 500)).toBe(D.p0);
+  });
+
+  it('only rises over a life and stays under the best rate', () => {
+    const { hitRate } = simulateLife({ ...D, years: 10 }, 2);
+    for (let i = 1; i < hitRate.length; i++) expect(hitRate[i]).toBeGreaterThanOrEqual(hitRate[i - 1]);
+    expect(hitRate[hitRate.length - 1]).toBeLessThan(D.pMax);
+  });
+});
+
+describe('chanceQuality', () => {
+  it('is 1 for your first chance of the week and halves at goodPerWeek + 1', () => {
+    expect(chanceQuality(DEFAULT_PARAMS, 0)).toBe(1);
+    expect(chanceQuality(DEFAULT_PARAMS, DEFAULT_PARAMS.goodPerWeek)).toBe(0.5);
+  });
+
+  it('makes extra chances worth less when good chances are scarce', () => {
+    const at = (g: number) => summarize(simulate({ ...DEFAULT_PARAMS, years: 5, bold: 6, burnout: false, goodPerWeek: g }, 200, 3).finals).p50;
+    expect(at(1)).toBeLessThan(at(15));
   });
 });

@@ -4,7 +4,7 @@
 
 import { mulberry32, simulate, summarize, type Params, type Rng } from './simulation';
 
-export type VaryKey = 'bold' | 'p0' | 'tieRate' | 'q' | 'alpha' | 'lossSize' | 'refRate' | 'tieHalfLife' | 'learn' | 'stake';
+export type VaryKey = 'bold' | 'p0' | 'tieRate' | 'q' | 'alpha' | 'lossSize' | 'refRate' | 'tieHalfLife' | 'pMax' | 'halfway' | 'goodPerWeek' | 'stake';
 
 export interface VarySpec {
   key: VaryKey;
@@ -20,7 +20,7 @@ export interface VarySpec {
 /** Log-normal σ for the realistic spread of each setting. */
 export const SIGMA: Record<VaryKey, number> = {
   bold: 0.7, p0: 0.5, tieRate: 0.5, q: 0.5, alpha: 0.15, lossSize: 0.5,
-  refRate: 0.5, tieHalfLife: 0.5, learn: 0.5, stake: 0.5,
+  refRate: 0.5, tieHalfLife: 0.5, pMax: 0.4, halfway: 0.6, goodPerWeek: 0.5, stake: 0.5,
 };
 
 /** The y-axis scale the page plots on: log10 of capital, or symmetric log of an additive score. */

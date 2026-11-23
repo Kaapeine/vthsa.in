@@ -2,9 +2,10 @@
 //
 // One simulated life is a week-by-week loop. Each week you take a Poisson
 // number of chances (your boldness) plus chances referred by your connections.
-// Each chance can hit (Pareto payoff), be a loss, or be a dud. Hits feed back
-// into skill (higher hit rate) and connections (more referrals); losses can
-// burn bridges; every attempt drains energy, and running out means burnout.
+// Each chance can hit (Pareto payoff), be a loss, or be a dud. Practice raises
+// your hit rate with diminishing returns; the first few chances each week are
+// your best ones; hits and chances build connections, which refer more chances.
+// Losses cost score and energy; running out of energy means burnout.
 
 export interface Params {
   /** Mean chances you take per week. */
@@ -20,14 +21,17 @@ export interface Params {
   refRate: number;
   /** Half-life of a connection, in years. */
   tieHalfLife: number;
-  /** Each hit adds this to skill; hit rate = p0 × (1 + skill). */
-  learn: number;
+  /** Best hit rate practice can get you to. */
+  pMax: number;
+  /** Attempts (practice) needed to close half the gap from p0 to pMax. */
+  halfway: number;
+  /** Good chances available per week: the k-th of your own chances in a week hits at 1 / (1 + (k−1)/goodPerWeek) of your rate. */
+  goodPerWeek: number;
   /** Probability that an attempt is a loss. */
   q: number;
   /** Mean of the exponential loss size (additive mode). */
   lossSize: number;
   burnout: boolean;
-  bridges: boolean;
   /** Multiplicative dynamics: hits and losses scale with current capital. */
   mult: boolean;
   /** Fraction of capital at stake per attempt (multiplicative mode). */
@@ -38,13 +42,15 @@ export interface Params {
 
 export const DEFAULT_PARAMS: Params = {
   bold: 2, years: 20, p0: 0.03, alpha: 1.5,
-  tieRate: 0.1, refRate: 0.02, tieHalfLife: 3, learn: 0.05,
-  q: 0.05, lossSize: 1, burnout: true, bridges: true,
+  tieRate: 0.1, refRate: 0.02, tieHalfLife: 3,
+  pMax: 0.12, halfway: 300, goodPerWeek: 3,
+  q: 0.05, lossSize: 1, burnout: true,
   mult: false, stake: 0.05, catastrophe: false,
 };
 
 // Fixed model constants (shown in the page copy; keep in sync).
-export const P_CAP = 0.3;
+/** Referral hit rate = your rate × REFERRAL_BOOST, capped here. */
+export const REF_CAP = 0.9;
 export const REFERRAL_BOOST = 1.5;
 export const ENERGY_DUD = 0.05;
 export const ENERGY_LOSS = 0.15;
@@ -137,7 +143,7 @@ export const NOTABLE_HIT = 4;
 /** Additive losses at or above this size go into the event log. */
 export const NOTABLE_LOSS = 2.5;
 const TIE_MILESTONES = [5, 10, 25, 50, 100, 250, 500];
-const SKILL_MILESTONES = [2, 3, 5]; // multiples of the starting hit rate
+const SKILL_MILESTONES = [0.5, 0.75, 0.9]; // share of the gap from p0 to pMax closed by practice
 
 function newRecord(weeks: number): LifeRecord {
   const n = weeks + 1;
@@ -163,7 +169,7 @@ function runLife(P: Params, r: Rng, path: Float64Array | null, rec: LifeRecord |
   const decay = Math.pow(0.5, 1 / (P.tieHalfLife * 52));
   let C = P.mult ? 1 : 0; // capital / score
   let T = 0; // connections
-  let s = 0; // skill
+  let n = 0; // practice: attempts taken so far
   let E = 1; // energy
   let burn = 0; // burnout weeks remaining
   let ruined = false;
@@ -172,7 +178,7 @@ function runLife(P: Params, r: Rng, path: Float64Array | null, rec: LifeRecord |
   let anyHit = false, tieM = 0, skillM = 0, yHits = 0, yLoss = 0, yDecl = 0;
   if (path) path[0] = C;
   if (rec) {
-    rec.capital[0] = C; rec.hitRate[0] = Math.min(P_CAP, P.p0); rec.energy[0] = 1;
+    rec.capital[0] = C; rec.hitRate[0] = P.p0; rec.energy[0] = 1;
   }
 
   for (let w = 1; w <= weeks; w++) {
@@ -183,19 +189,20 @@ function runLife(P: Params, r: Rng, path: Float64Array | null, rec: LifeRecord |
       wasBurnt = true;
     } else if (!ruined) {
       const nRef = poisson(T * P.refRate, r);
-      const n = nRef + poisson(P.bold, r);
-      for (let k = 0; k < n; k++) {
+      const nAll = nRef + poisson(P.bold, r);
+      for (let k = 0; k < nAll; k++) {
         const ref = k < nRef; // referrals are handled first
         if (P.burnout) {
           if (ref && E < DECLINE_BELOW) { if (rec) yDecl++; continue; }
           if (E <= 0) break;
         }
         if (r() < P.tieRate) T += 1;
-        const p = Math.min(P_CAP, P.p0 * (1 + s) * (ref ? REFERRAL_BOOST : 1));
+        const rate = practiceRate(P, n);
+        const p = ref ? Math.min(REF_CAP, rate * REFERRAL_BOOST) : rate * chanceQuality(P, k - nRef);
+        n++;
         const u = r();
         const costMul = ref ? 0.5 : 1;
         if (u < p) {
-          s += P.learn;
           T += 1;
           E = Math.min(1, E + ENERGY_HIT_BONUS);
           const X = Math.pow(1 - r(), -1 / P.alpha); // Pareto(alpha, 1)
@@ -209,10 +216,6 @@ function runLife(P: Params, r: Rng, path: Float64Array | null, rec: LifeRecord |
           }
         } else if (u < p + P.q) {
           E -= ENERGY_LOSS * costMul;
-          if (P.bridges) {
-            T = Math.max(0, T - 1);
-            s *= 0.9;
-          }
           let size: number;
           if (P.mult) { size = P.stake; C *= 1 - P.stake; }
           else { size = -P.lossSize * Math.log(1 - r()); C -= size; } // Exponential(mean lossSize)
@@ -245,13 +248,13 @@ function runLife(P: Params, r: Rng, path: Float64Array | null, rec: LifeRecord |
     T *= decay;
     if (path && w % PATH_STEP === 0) path[w / PATH_STEP] = C;
     if (rec) {
-      rec.capital[w] = C; rec.ties[w] = T; rec.hitRate[w] = Math.min(P_CAP, P.p0 * (1 + s));
+      rec.capital[w] = C; rec.ties[w] = T; rec.hitRate[w] = practiceRate(P, n);
       rec.energy[w] = wasBurnt ? 0 : eAfter; rec.burnt[w] = wasBurnt ? 1 : 0;
       rec.bestHit[w] = best; rec.hits[w] = Math.min(255, nHit); rec.losses[w] = Math.min(255, nLoss);
       while (tieM < TIE_MILESTONES.length && T >= TIE_MILESTONES[tieM]) {
         rec.events.push({ week: w, kind: 'ties', value: TIE_MILESTONES[tieM] }); tieM++;
       }
-      while (skillM < SKILL_MILESTONES.length && 1 + s >= SKILL_MILESTONES[skillM] && P.p0 * SKILL_MILESTONES[skillM] <= P_CAP) {
+      while (skillM < SKILL_MILESTONES.length && P.pMax > P.p0 && n / (n + P.halfway) >= SKILL_MILESTONES[skillM]) {
         rec.events.push({ week: w, kind: 'skill', value: SKILL_MILESTONES[skillM] }); skillM++;
       }
       if (w % 52 === 0) {
@@ -261,6 +264,21 @@ function runLife(P: Params, r: Rng, path: Float64Array | null, rec: LifeRecord |
     }
   }
   return { C, ruined, burnWeeks };
+}
+
+/**
+ * Your hit rate after n attempts. Practice closes the gap to the best possible
+ * rate with diminishing returns (a power law of practice with exponent 1):
+ * after `halfway` attempts half the gap is closed, after 3 × halfway three quarters.
+ */
+export function practiceRate(P: Params, n: number): number {
+  const best = Math.max(P.pMax, P.p0);
+  return best - (best - P.p0) / (1 + n / P.halfway);
+}
+
+/** Hit-rate multiplier for your k-th own chance in a week (k from 0): later ones are worse. */
+export function chanceQuality(P: Params, k: number): number {
+  return 1 / (1 + k / P.goodPerWeek);
 }
 
 /** One fully recorded life: life `index` of the run with `seed`. */
@@ -335,7 +353,7 @@ export function networkEcho(P: Params): number {
  * randomness, so the real peak sits a little below it.
  */
 export function sustainablePace(P: Params): number {
-  const p = Math.min(P_CAP, P.p0);
+  const p = P.p0;
   const q = Math.min(P.q, 1 - p);
   const cost = (1 - p - q) * ENERGY_DUD + q * ENERGY_LOSS - p * ENERGY_HIT_BONUS;
   return cost > 0 ? ENERGY_RECOVER / cost : Infinity;

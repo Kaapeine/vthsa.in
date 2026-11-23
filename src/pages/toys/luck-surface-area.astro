@@ -38,7 +38,12 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
           <div class="ctl">
             <div class="row"><label for="p0">Starting hit rate</label><output for="p0" id="p0-o"></output></div>
             <input type="range" id="p0" min="0.005" max="0.15" step="0.005" value="0.03" />
-            <div class="hint">Chance that one attempt turns into something, before any skill or reputation.</div>
+            <div class="hint">Chance that one attempt turns into something, before any practice.</div>
+          </div>
+          <div class="ctl">
+            <div class="row"><label for="goodPerWeek">Good chances per week</label><output for="goodPerWeek" id="goodPerWeek-o"></output></div>
+            <input type="range" id="goodPerWeek" min="0.5" max="15" step="0.5" value="3" />
+            <div class="hint">Your first few chances each week are your best ones. The k-th one hits at 1 / (1 + (k − 1) / this) of your rate, so at 3, your 4th chance is half as good as your 1st. Referrals aren't affected.</div>
           </div>
           <div class="ctl">
             <div class="row"><label for="tieRate">Ties per chance</label><output for="tieRate" id="tieRate-o"></output></div>
@@ -72,7 +77,21 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
         </div>
 
         <div class="group">
-          <h3>Feedback</h3>
+          <h3>Learning</h3>
+          <div class="ctl">
+            <div class="row"><label for="pMax">Best possible hit rate</label><output for="pMax" id="pMax-o"></output></div>
+            <input type="range" id="pMax" min="0.01" max="0.3" step="0.005" value="0.12" />
+            <div class="hint">Where practice tops out. Every attempt counts as practice, hit or miss.</div>
+          </div>
+          <div class="ctl">
+            <div class="row"><label for="halfway">Practice to get halfway</label><output for="halfway" id="halfway-o"></output></div>
+            <input type="range" id="halfway" min="25" max="2000" step="25" value="300" />
+            <div class="hint">Attempts needed to close half the gap from your starting rate to your best. Three times as many close three quarters: gains come fast at first, then slow down.</div>
+          </div>
+        </div>
+
+        <div class="group">
+          <h3>Network</h3>
           <div class="ctl">
             <div class="row"><label for="refRate">Referrals per tie</label><output for="refRate" id="refRate-o"></output></div>
             <input type="range" id="refRate" min="0" max="0.06" step="0.002" value="0.02" />
@@ -83,12 +102,6 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
             <input type="range" id="tieHalfLife" min="0.5" max="10" step="0.5" value="3" />
             <div class="hint">How long until half your connections have gone quiet.</div>
           </div>
-          <div class="ctl">
-            <div class="row"><label for="learn">Learning per hit</label><output for="learn" id="learn-o"></output></div>
-            <input type="range" id="learn" min="0" max="0.2" step="0.01" value="0.05" />
-            <div class="hint">Each hit raises your hit rate by this fraction of the starting rate (skill and reputation). Capped at 30%.</div>
-          </div>
-          <label class="toggle"><input type="checkbox" id="bridges" checked /><span>Burnt bridges<small>A loss also costs you a connection and 10% of your accumulated skill.</small></span></label>
         </div>
 
         <div class="group">
@@ -268,9 +281,10 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
         <h2>The rules, exactly</h2>
         <ol>
           <li>Each week you take a random number of chances: a Poisson draw with mean set by <em>chances per week</em>. Each connection you have also sends you chances, a Poisson draw with mean <code>ties × referrals per tie</code>.</li>
-          <li>Each chance hits with probability <code>p = p₀ × (1 + skill)</code>, or 1.5× that for referrals, capped at 30%. Otherwise it is a loss with probability <em>q</em>, or a dud.</li>
-          <li>A hit pays <code>X ~ Pareto(α, 1)</code>, adds a connection, and adds <em>learning</em> to skill. Every chance has its own probability of adding a connection.</li>
-          <li>Connections fade with the half-life you set. Energy, burnout, and burnt bridges behave as described in the toggles.</li>
+          <li>After <em>n</em> attempts your hit rate is <code>p = p_best − (p_best − p₀) / (1 + n / halfway)</code>. Every attempt is practice, and gains slow down as you approach your best (a power law of practice).</li>
+          <li>Your <em>k</em>-th own chance in a week hits with probability <code>p / (1 + (k − 1) / good chances per week)</code>, because you take your best opportunities first. Referrals hit at 1.5 × p. Otherwise a chance is a loss with probability <em>q</em>, or a dud.</li>
+          <li>A hit pays <code>X ~ Pareto(α, 1)</code> and adds a connection. Every chance also has its own probability of adding one.</li>
+          <li>Connections fade with the half-life you set. Energy and burnout behave as described in the toggle. Losses cost score and energy, never connections or practice.</li>
           <li><b>Additive:</b> score starts at 0, hits add <code>X</code>, and losses subtract an exponential draw. <b>Multiplicative:</b> capital starts at 1, a hit multiplies it by <code>1 + stake·X</code>, and a loss multiplies it by <code>1 − stake</code>. Below 0.01 you are ruined and stop playing.</li>
         </ol>
       </section>
@@ -436,7 +450,7 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
   import type { PeopleMessage, PeopleRequest } from '../../lib/luck/people.worker';
 
   type Mode = 'add' | 'mult';
-  type SliderKey = 'bold' | 'years' | 'p0' | 'alpha' | 'tieRate' | 'refRate' | 'tieHalfLife' | 'learn' | 'q' | 'lossSize' | 'stake';
+  type SliderKey = 'bold' | 'years' | 'p0' | 'alpha' | 'tieRate' | 'refRate' | 'tieHalfLife' | 'pMax' | 'halfway' | 'goodPerWeek' | 'q' | 'lossSize' | 'stake';
   type Pt = [number, number];
 
   const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -449,7 +463,9 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
     tieRate: (v) => v.toFixed(2),
     refRate: (v) => `${v.toFixed(3)}/wk`,
     tieHalfLife: (v) => `${v} yr`,
-    learn: (v) => `+${Math.round(v * 100)}%`,
+    pMax: (v) => `${(v * 100).toFixed(1)}%`,
+    halfway: (v) => `${Math.round(v)} tries`,
+    goodPerWeek: (v) => `${(+v.toFixed(1))}/wk`,
     q: (v) => `${Math.round(v * 100)}%`,
     lossSize: (v) => v.toFixed(2),
     stake: (v) => `${(v * 100).toFixed(1)}%`,
@@ -464,7 +480,6 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
     const P: Params = { ...DEFAULT_PARAMS };
     for (const k of KEYS) P[k] = +$<HTMLInputElement>(k).value;
     P.burnout = $<HTMLInputElement>('burnout').checked;
-    P.bridges = $<HTMLInputElement>('bridges').checked;
     P.catastrophe = $<HTMLInputElement>('catastrophe').checked;
     P.mult = mode === 'mult';
     return P;
@@ -896,7 +911,10 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
       case 'catastrophe': return { cls: 'bad', when: at, text: 'Catastrophe: lost 90% of everything.' };
       case 'ruin': return { cls: 'bad', when: at, text: 'Ruined. Nothing left to stake.' };
       case 'ties': return { cls: 'mile', when: at, text: `${e.value} connections who send chances your way.` };
-      case 'skill': return { cls: 'mile', when: at, text: `Your hit rate is now ${e.value}× where you started.` };
+      case 'skill': {
+        const best = Math.max(lifeP.pMax, lifeP.p0), rate = lifeP.p0 + e.value * (best - lifeP.p0);
+        return { cls: 'mile', when: at, text: `Practice has closed ${Math.round(e.value * 100)}% of the gap to your best: hit rate ${(rate * 100).toFixed(1)}%.` };
+      }
       case 'year': {
         const nb = cum.burnouts[e.week] - cum.burnouts[e.week - 52];
         const burnt = nb ? `, burnt out ${nb === 1 ? 'once' : `${nb} times`}` : '';
@@ -1019,7 +1037,7 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
       ['Connections', `${Math.floor(life.ties[cw])}`, 'active right now'],
       ['Hit rate', `${(rate * 100).toFixed(1)}%`, `${(rate / lifeP.p0).toFixed(1)}× where you started`],
       ['Hits', `${cum.hits[cw]}`, `${life.events.filter((e) => e.week <= cw && (e.kind === 'hit' || e.kind === 'first-hit') && e.value >= 10).length} of them 10+`],
-      ['Losses', `${cum.losses[cw]}`, lifeP.bridges ? 'each one burns a bridge' : 'bridges intact'],
+      ['Losses', `${cum.losses[cw]}`, lifeP.mult ? `each takes ${fmtPct(lifeP.stake)} of capital` : 'each subtracts from the score'],
       ['Burnouts', `${b}`, lifeP.burnout ? `${b * BURNOUT_WEEKS} weeks lost` : 'toggle is off', b > 0],
     ]);
   }
@@ -1076,7 +1094,9 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
     { key: 'stake', label: 'Stake per chance', only: 'mult' },
     { key: 'refRate', label: 'Referrals per tie' },
     { key: 'tieHalfLife', label: 'Tie half-life' },
-    { key: 'learn', label: 'Learning per hit' },
+    { key: 'pMax', label: 'Best possible hit rate' },
+    { key: 'halfway', label: 'Practice to get halfway' },
+    { key: 'goodPerWeek', label: 'Good chances per week' },
   ];
   const varyLabel = (k: VaryKey) => VARY.find((v) => v.key === k)!.label;
   type Slot = 'x' | 'c';
@@ -1407,7 +1427,7 @@ import ToyLayout from '../../layouts/ToyLayout.astro';
 
   readColors();
   for (const k of KEYS) $(k).addEventListener('input', () => { markPreset(); update(false); });
-  for (const k of ['burnout', 'bridges', 'catastrophe']) $(k).addEventListener('change', () => update(true));
+  for (const k of ['burnout', 'catastrophe']) $(k).addEventListener('change', () => update(true));
   $('mode-add').addEventListener('click', () => setMode('add'));
   $('mode-mult').addEventListener('click', () => setMode('mult'));
   $('sw-bold').addEventListener('click', () => setSweep('bold'));
